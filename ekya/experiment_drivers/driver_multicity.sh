@@ -21,7 +21,7 @@ MAX_INFERENCE_RESOURCES=0.25
 CITIES=zurich,jena,cologne
 
 # Reduce number of epochs when using past retraining data
-for scheduler in utilitysim fair noretrain; do
+for scheduler in utilitysim fair noretrain thief; do
   echo Running scheduler $scheduler on cities $CITIES
   python driver_multicity.py --scheduler ${scheduler} \
            --cities ${CITIES} \

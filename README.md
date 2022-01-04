@@ -62,6 +62,8 @@ nvidia-cuda-mps-control -d
  ```
 ./ekya/experiment_drivers/driver_multicity.sh
 ``` 
+You may need to modify `DATASET_PATH` and `MODEL_PATH` to point to your dataset and pretrained models dir, respectively.
+This script will run all schedulers, including `thief`, `fair` and `noretrain`.
 
 ## Ekya driver script usage guide
 ```
