@@ -62,7 +62,8 @@ nvidia-cuda-mps-control -d
  ```
 ./ekya/experiment_drivers/driver_multicity.sh
 ``` 
-Here is the usage guide for the Ekya driver scripts:
+
+## Ekya driver script usage guide
 ```
 usage: Ekya  [-h] [-ld LOG_DIR] [-retp RETRAINING_PERIOD]
                     [-infc INFERENCE_CHUNKS] [-numgpus NUM_GPUS]
