@@ -1,15 +1,10 @@
 #!/bin/bash
-# Runs one city at a time through ekya. Good as a sanity check to ensure retraining results in accuracy gains.
+# Runs multiple cities city at a time through ekya. Good as a sanity check to ensure retraining results in accuracy gains.
 set -e
 
 DATASET_PATH='/home/researcher/datasets/cityscapes/'
 MODEL_PATH='/home/researcher/models/'
-#DATASET_PATH='/home/romilb/datasets/cityscapes_raw/'
-#MODEL_PATH='/home/romilb/research/msr/models/'
-UTILITYSIM_SCHEDULE_PATH='utilitysim_schedules/3city_0621/schedules.json'
-UTILITYSIM_HYPS_PATH='utilitysim_schedules/3city_0621/hyp_map.json'
 INFERENCE_PROFILE_PATH='real_inference_profiles.csv'
-UTILITYSIM_SCHEDULE_KEY='100_1_thief_True'
 RETRAINING_PERIOD=100
 NUM_TASKS=10
 INFERENCE_CHUNKS=10
@@ -38,9 +33,6 @@ for scheduler in utilitysim fair noretrain thief; do
            --start-task ${START_TASK} \
            --termination-task ${TERMINATION_TASK} \
            --epochs ${EPOCHS} \
-           --utilitysim-schedule-path ${UTILITYSIM_SCHEDULE_PATH} \
-           --utilitysim-hyps-path ${UTILITYSIM_HYPS_PATH} \
-           --utilitysim-schedule-key ${UTILITYSIM_SCHEDULE_KEY} \
            --inference-profile-path ${INFERENCE_PROFILE_PATH} \
            --max-inference-resources ${MAX_INFERENCE_RESOURCES}
 done
