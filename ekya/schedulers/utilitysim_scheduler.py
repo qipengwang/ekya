@@ -81,7 +81,7 @@ class UtilitySimScheduler(BaseScheduler):
         :return: inference resource weights, hyperparameters
         '''
         inference_resource_weights = {c.id: (resources / (len(cameras))) * 100 for c in cameras}
-        hyperparameters = {c.id: self.default_hyperparams for c in cameras}
+        hyperparameters = {c.id: self.inference_default_hyperparam for c in cameras}
         return inference_resource_weights, hyperparameters
 
     def reallocation_callback(self,

@@ -4,7 +4,9 @@ set -e
 
 DATASET_PATH='/home/researcher/datasets/cityscapes/'
 MODEL_PATH='/home/researcher/models/'
+HYPS_PATH='profiling/hyp_map_all.json'
 INFERENCE_PROFILE_PATH='real_inference_profiles.csv'
+UTILITYSIM_SCHEDULE_PATH='utilitysim_schedules/3city_0621/schedules.json'
 RETRAINING_PERIOD=100
 NUM_TASKS=10
 INFERENCE_CHUNKS=10
@@ -20,7 +22,7 @@ for scheduler in utilitysim fair noretrain thief; do
   echo Running scheduler $scheduler on cities $CITIES
   python driver_multicity.py --scheduler ${scheduler} \
            --cities ${CITIES} \
-           --log-dir /tmp/ekya_expts/multicity/${scheduler}/ \
+           --log-dir results/ekya_expts/multicity/${scheduler}/ \
            --retraining-period ${RETRAINING_PERIOD} \
            --num-tasks ${NUM_TASKS} \
            --inference-chunks ${INFERENCE_CHUNKS} \
@@ -34,5 +36,8 @@ for scheduler in utilitysim fair noretrain thief; do
            --termination-task ${TERMINATION_TASK} \
            --epochs ${EPOCHS} \
            --inference-profile-path ${INFERENCE_PROFILE_PATH} \
-           --max-inference-resources ${MAX_INFERENCE_RESOURCES}
+           --max-inference-resources ${MAX_INFERENCE_RESOURCES} \
+           --utilitysim-schedule-path ${UTILITYSIM_SCHEDULE_PATH} \
+           --hyps-path ${HYPS_PATH} \
+           --gpu-memory 4
 done
