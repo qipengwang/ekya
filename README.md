@@ -211,3 +211,6 @@ optional arguments:
                         ceiling for the inference scaling function.
 
 ```
+## FAQ
+Please checkout [FAQ](./FAQ.md).
+
