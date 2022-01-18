@@ -29,6 +29,8 @@ ray/ci/travis/install-bazel.sh
 
 # Build the dashboard
 # (requires Node.js, see https://nodejs.org/ for more information).
+# If folder "ray/dasboard/client" does not exist, please move forward to 
+# "Install ray"
 pushd ray/dashboard/client
 npm install
 npm run build
