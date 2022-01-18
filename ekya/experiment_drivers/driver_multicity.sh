@@ -2,8 +2,10 @@
 # Runs multiple cities city at a time through ekya. Good as a sanity check to ensure retraining results in accuracy gains.
 set -e
 
-DATASET_PATH='/home/researcher/datasets/cityscapes/'
-MODEL_PATH='/home/researcher/models/'
+# DATASET_PATH='/home/researcher/datasets/cityscapes/'
+DATASET_PATH='/data/zxxia/ekya/datasets/CityScapes/'
+# MODEL_PATH='/home/researcher/models/'
+MODEL_PATH='/data2/zxxia/ekya_release/ekya/pretrained_models/'
 HYPS_PATH='profiling/hyp_map_all.json'
 INFERENCE_PROFILE_PATH='real_inference_profiles.csv'
 UTILITYSIM_SCHEDULE_PATH='utilitysim_schedules/3city_0621/schedules.json'
