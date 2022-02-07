@@ -214,7 +214,8 @@ optional arguments:
 
 ## Golden model
 
-Download resnext101 elastic model from [here](https://github.com/allenai/elastic).
+Download resnext101 elastic model from [here](https://github.com/allenai/elastic)
+into ```ekya/golden_model/```.
 
 ## Frequently Asked Questions
 
