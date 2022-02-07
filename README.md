@@ -3,12 +3,12 @@ Ekya is a system which enables continuous learning on resource constrained devic
 
 ![Ekya Architecture](https://i.imgur.com/ng1jLsS.png)
 
-More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf). 
+More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf).
 
 # Installation
 
 1. First checkout Ray repository. Ekya requires first building a particular branch of Ray from source. Ekya uses commit `cf53b351471716e7bfa71d36368ebea9b0e219c5` (`Ray 0.9.0.dev0`) from the Ray repository.
-`pip install ray` is not sufficient. 
+`pip install ray` is not sufficient.
 ```bash
 git clone https://github.com/ray-project/ray/
 cd ray
@@ -29,7 +29,7 @@ ray/ci/travis/install-bazel.sh
 
 # Build the dashboard
 # (requires Node.js, see https://nodejs.org/ for more information).
-# If folder "ray/dasboard/client" does not exist, please move forward to 
+# If folder "ray/dasboard/client" does not exist, please move forward to
 # "Install ray"
 pushd ray/dashboard/client
 npm install
@@ -44,7 +44,7 @@ pip install -e . --verbose  # Add --user if you see a permission denied error.
 ```
 git clone https://github.com/romilbhardwaj/ekya/
 pip install -e . --verbose
-``` 
+```
 4. Install [Nvidia Multiprocess Service (MPS)](https://docs.nvidia.com/deploy/mps/index.html).
 ```
 sudo apt-get update
@@ -58,12 +58,12 @@ nvidia-cuda-mps-control -d
 ```
 
 # Running Ekya with Cityscapes Dataset
-1. Setup the Cityscapes dataset using the instructions on the [website](https://www.cityscapes-dataset.com/) 
+1. Setup the Cityscapes dataset using the instructions on the [website](https://www.cityscapes-dataset.com/)
 2. Download the pretrained models for cityscapes from [here](https://drive.google.com/drive/folders/15qE5IBFAkKuiDeUcV8xQPvpKXq1Zk6yT?usp=sharing).
 3. Run the multicity training script is provided with Ekya.
  ```
 ./ekya/experiment_drivers/driver_multicity.sh
-``` 
+```
 You may need to modify `DATASET_PATH` and `MODEL_PATH` to point to your dataset and pretrained models dir, respectively.
 This script will run all schedulers, including `thief`, `fair` and `noretrain`.
 
@@ -217,11 +217,16 @@ optional arguments:
 Download resnext101 elastic model from [here](https://github.com/allenai/elastic)
 into ```ekya/golden_model/```.
 
+## Prepare Waymo Dataset
+1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
+2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
+3. Click "tar files".
+
 ## Frequently Asked Questions
 
-1. When installing ray with `pip install -e . --verbose` and encountering the 
+1. When installing ray with `pip install -e . --verbose` and encountering the
    error `"[ray] [bazel] build failure, error --experimental_ui_deduplicate
-   unrecognized"`. 
+   unrecognized"`.
 
     Please checkout this
     [issue](https://github.com/ray-project/ray/issues/11237). If other versions
