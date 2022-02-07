@@ -211,6 +211,11 @@ optional arguments:
                         ceiling for the inference scaling function.
 
 ```
+
+## Golden model
+
+Download resnext101 elastic model from [here](https://github.com/allenai/elastic).
+
 ## Frequently Asked Questions
 
 1. When installing ray with `pip install -e . --verbose` and encountering the 
