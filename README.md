@@ -236,17 +236,23 @@ into ```ekya/object_detection_model/```.
 ## Prepare MP4(Vegas) Dataset
 
 ```
-python driver_prepare_mp4.py --dataset vegas --dataset-root ekya/dataset
---model-path ${PATH_TO_OBJECT_DETECTION_MODEL} --device 0
+cd ekya/ekya/experiment_drivers
+python driver_prepare_mp4.py \
+    --dataset vegas \
+    --dataset-root ../../dataset \
+    --device 0 \
+    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
 ```
 
 ## Prepare MP4(Bellevue) Dataset
 
 ```
-cd ekya/experiment_drivers
-python prepare_bellevue.py --video-dir ${PATH_TO_BELLEVUE_VIDS} --save-dir
-python driver_prepare_mp4.py --dataset bellevue --dataset-root ekya/dataset
---model-path ${PATH_TO_OBJECT_DETECTION_MODEL} --device 0
+cd ekya/ekya/experiment_drivers
+python driver_prepare_mp4.py \
+    --dataset bellevue \
+    --dataset-root ../../dataset \
+    --device 0 \
+    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
 ```
 
 ## Frequently Asked Questions
@@ -261,4 +267,3 @@ python driver_prepare_mp4.py --dataset bellevue --dataset-root ekya/dataset
     from
     [here](https://docs.bazel.build/versions/main/install-compile-source.html)
     and compile ray useing `bazel-3.2.0`.
-
