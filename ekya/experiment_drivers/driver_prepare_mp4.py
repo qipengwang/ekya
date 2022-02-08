@@ -24,7 +24,7 @@ def parse_args():
 def main():
     args = parse_args()
     dataset_name = args.dataset
-    root = os.path.join('/data3/zxxia/', dataset_name)
+    root = os.path.join(args.dataset_root, dataset_name)
     vid_paths = glob.glob(os.path.join(root,  '*.mp4'))
 
     for vid_path in sorted(vid_paths):
