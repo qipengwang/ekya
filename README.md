@@ -212,15 +212,42 @@ optional arguments:
 
 ```
 
-## Golden model
+## Golden Model
 
-Download resnext101 elastic model from [here](https://github.com/allenai/elastic)
-into ```ekya/golden_model/```.
+The golden model is used to generate image classification groundtruth in Ekya.
+Please download resnext101 elastic model from
+[here](https://github.com/allenai/elastic) into ```ekya/golden_model/```.
+
+
+## Object Detection Model
+
+The object detection model is used to identify objects from video frames.
+Please download ```faster_rcnn_resnet101_coco_2018_01_28``` from
+[here](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md)
+into ```ekya/object_detection_model/```.
 
 ## Prepare Waymo Dataset
+
 1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
 2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
 3. Click "tar files".
+
+
+## Prepare MP4(Vegas) Dataset
+
+```
+python driver_prepare_mp4.py --dataset vegas --dataset-root ekya/dataset
+--model-path ${PATH_TO_OBJECT_DETECTION_MODEL} --device 0
+```
+
+## Prepare MP4(Bellevue) Dataset
+
+```
+cd ekya/experiment_drivers
+python prepare_bellevue.py --video-dir ${PATH_TO_BELLEVUE_VIDS} --save-dir
+python driver_prepare_mp4.py --dataset bellevue --dataset-root ekya/dataset
+--model-path ${PATH_TO_OBJECT_DETECTION_MODEL} --device 0
+```
 
 ## Frequently Asked Questions
 
