@@ -32,12 +32,9 @@ for HPARAM_ID in 0 1 2 3 4 5; do
     # for CITY in las_vegas_1_2fps ; do
     # for CITY in las_vegas_10fps_2701_7200 ; do
     # for CITY in las_vegas_10fps_2701_7200 ; do
-    # for CITY in las_vegas_24h_0_0.2fps ; do
-    # for CITY in las_vegas_24h_1_0.2fps ; do
-    # for CITY in las_vegas_24h_2_0.2fps ; do
-    for CITY in las_vegas_24h_3_0.2fps ; do
-    #
-#
+    for CITY in las_vegas_24h_0_0.2fps las_vegas_24h_1_0.2fps las_vegas_24h_2_0.2fps las_vegas_24h_3_0.2fps; do
+
+
 # Bellevue_Bellevue_NE8th__2017-09-10_18-08-23_0.5fps
 
 
