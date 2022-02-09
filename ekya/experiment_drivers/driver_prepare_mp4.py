@@ -8,7 +8,7 @@ from ekya.datasets.Mp4VideoClassification import Mp4VideoClassification
 def parse_args():
     parser = argparse.ArgumentParser("Prepare MP4(Bellevue, Vegas) dataset",
                                      description="Ekya script.")
-    parser.add_argument("--dataset", type=str, choices=('bellevue', 'vegas'),
+    parser.add_argument("--dataset", type=str,
                         required=True, help="Dataset name.")
     parser.add_argument('--model-path', type=str, required=True,
                         help='Object detection model path.')
