@@ -33,8 +33,6 @@ def main():
         img_dir = os.path.join(root, vid_name, 'frame_images')
         if not os.path.exists(img_dir):
             os.makedirs(img_dir)
-        else:
-            continue
 
         # create classificaiton image folder
         clf_img_dir = os.path.join(root, vid_name, 'classification_images')
