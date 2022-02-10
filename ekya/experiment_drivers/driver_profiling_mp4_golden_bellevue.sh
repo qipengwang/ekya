@@ -1,14 +1,11 @@
 #!/bin/bash
-# Runs one city at a time through ekya. Good as a sanity check to ensure retraining results in accuracy gains.
+# Runs one city at a time through ekya. Good as a sanity check to ensure
+# retraining results in accuracy gains.
 set -e
 
-DATASET_NAME=mp4
-# DATASET_NAME=bellevue
-DATASET_PATH='/data/zxxia/ekya/datasets/mp4/'
-# DATASET_PATH='/data/zxxia/ekya/datasets/bellevue/'
-# DATASET_PATH='/data3/zxxia/bellevue/'
-# DATASET_PATH='/data3/zxxia/bellevue/'
-# MODEL_PATH='/data/zxxia/ekya/cityscapes_saved_models/pretrain_models_romil/'
+# DATASET_NAME=mp4
+DATASET_NAME=bellevue
+DATASET_PATH=/data/zxxia/ekya/datasets/mp4/${DATASET_NAME}
 MODEL_PATH='/data/zxxia/ekya/mp4_saved_models/'
 # MODEL_PATH='/data/zxxia/ekya/bellevue_saved_models/'
 GOLDEN_MODEL_PATH='/data2/zxxia/ekya/golden_model/coco_resnext101_elastic.pth.tar'
@@ -29,10 +26,6 @@ MAX_INFERENCE_RESOURCES=0.25
 
              # --lists-pretrained las_vegas_10fps_2701_7200 \
 for HPARAM_ID in 0 1 2 3 4 5; do
-    # for CITY in las_vegas_1_2fps ; do
-    # for CITY in las_vegas_10fps_2701_7200 ; do
-    # for CITY in las_vegas_10fps_2701_7200 ; do
-    for CITY in las_vegas_24h_0_0.2fps las_vegas_24h_1_0.2fps las_vegas_24h_2_0.2fps las_vegas_24h_3_0.2fps; do
 
 
 # Bellevue_Bellevue_NE8th__2017-09-10_18-08-23_0.5fps
@@ -42,7 +35,7 @@ for HPARAM_ID in 0 1 2 3 4 5; do
     # for CITY in Bellevue_150th_Newport__2017-09-10_18-08-24_0.5fps Bellevue_150th_Newport__2017-09-10_21-08-28_0.5fps Bellevue_150th_Newport__2017-09-11_00-08-29_0.5fps Bellevue_150th_Newport__2017-09-11_03-08-29_0.5fps Bellevue_150th_Newport__2017-09-11_06-08-30_0.5fps Bellevue_150th_Newport__2017-09-11_09-08-30_0.5fps Bellevue_150th_Newport__2017-09-11_12-08-32_0.5fps Bellevue_150th_Newport__2017-09-11_15-08-32_0.5fps; do
     # for CITY in Bellevue_150th_SE38th__2017-09-10_18-08-24_0.5fps Bellevue_150th_SE38th__2017-09-10_21-08-38_0.5fps Bellevue_150th_SE38th__2017-09-11_00-08-29_0.5fps Bellevue_150th_SE38th__2017-09-11_03-08-30_0.5fps Bellevue_150th_SE38th__2017-09-11_06-08-32_0.5fps Bellevue_150th_SE38th__2017-09-11_09-08-31_0.5fps Bellevue_150th_SE38th__2017-09-11_12-08-38_0.5fps Bellevue_150th_SE38th__2017-09-11_16-08-35_0.5fps; do
     # for CITY in Bellevue_Bellevue_NE8th__2017-09-10_18-08-23_0.5fps Bellevue_Bellevue_NE8th__2017-09-10_21-08-28_0.5fps Bellevue_Bellevue_NE8th__2017-09-11_00-08-29_0.5fps Bellevue_Bellevue_NE8th__2017-09-11_03-08-29_0.5fps Bellevue_Bellevue_NE8th__2017-09-11_06-08-29_0.5fps Bellevue_Bellevue_NE8th__2017-09-11_09-08-30_0.5fps Bellevue_Bellevue_NE8th__2017-09-11_12-08-31_0.5fps Bellevue_Bellevue_NE8th__2017-09-11_15-08-32_0.5fps; do
-    # for CITY in  Bellevue_116th_NE12th__2017-09-10_19-08-25_0.5fps Bellevue_116th_NE12th__2017-09-10_22-08-50_0.5fps Bellevue_116th_NE12th__2017-09-11_01-08-29_0.5fps Bellevue_116th_NE12th__2017-09-11_04-08-30_0.5fps Bellevue_116th_NE12th__2017-09-11_07-08-32_0.5fps Bellevue_116th_NE12th__2017-09-11_11-08-33_0.5fps Bellevue_116th_NE12th__2017-09-11_15-08-36_0.5fps Bellevue_116th_NE12th__2017-09-11_16-08-37_0.5fps; do
+    for CITY in  Bellevue_116th_NE12th__2017-09-10_19-08-25_0.5fps Bellevue_116th_NE12th__2017-09-10_22-08-50_0.5fps Bellevue_116th_NE12th__2017-09-11_01-08-29_0.5fps Bellevue_116th_NE12th__2017-09-11_04-08-30_0.5fps Bellevue_116th_NE12th__2017-09-11_07-08-32_0.5fps Bellevue_116th_NE12th__2017-09-11_11-08-33_0.5fps Bellevue_116th_NE12th__2017-09-11_15-08-36_0.5fps Bellevue_116th_NE12th__2017-09-11_16-08-37_0.5fps; do
     echo Running profiling on city $CITY Hparam: $HPARAM_ID
     CUDA_VISIBLE_DEVICES=3 python driver_multicity.py \
              --scheduler profiling \
@@ -67,6 +60,5 @@ for HPARAM_ID in 0 1 2 3 4 5; do
              --golden-model-ckpt-path ${GOLDEN_MODEL_PATH} \
              --use-data-cache \
              --checkpoint-path /data2/zxxia/ekya/results/${DATASET_NAME}_outputs/human_label_profiles_sampled_${START_TASK}_${TERMINATION_TASK}/
-
   done
 done
