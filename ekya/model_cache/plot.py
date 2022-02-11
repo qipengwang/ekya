@@ -5,15 +5,17 @@ import numpy as np
 import pandas as pd
 from ekya.utils.helpers import read_json_file
 
-from plotting_scripts.config import ASPECT, HEIGHT, PARAMS
+ASPECT = 1.3
+HEIGHT = 2.5
+PARAMS = {'legend.fontsize': 'x-large',
+          'figure.figsize': (15, 5),
+          'axes.labelsize': 'x-large',
+          'axes.titlesize': 'x-large',
+          'xtick.labelsize': 'x-large',
+          'ytick.labelsize': 'x-large'}
 
-# params = {'axes.labelsize': 12,
-#           'axes.labelpad': 0,
-#           'xtick.labelsize': 12,
-#           'ytick.labelsize': 12}
 plt.rcParams.update(PARAMS)
 
-CACHE_ROOT = '/data2/zxxia/ekya/results/model_cache_exp/golden_label_profiles'
 ROOT = '/data2/zxxia/ekya/ekya/model_cache/results_golden_label'
 CITIES = ['sf_030_039', 'sf_050_059', 'sf_060_069',
           'sf_070_079', 'sf_080_089']
@@ -22,9 +24,6 @@ CITIES = ['sf_030_039', 'sf_050_059', 'sf_060_069',
 def select_by_location(test_data, mask):
     """Select model by their locaiton. Due to lack of gps signal, we select a
     model from a city to mimic this baseline."""
-    # import ipdb
-    # ipdb.set_trace()
-    # print(test_data[mask].iloc[3][['cached_camera_name', 'hyp_id', 'cached_camera_task_id']].to_list())
     return test_data[mask].iloc[3]['test_acc']
 
 
@@ -33,10 +32,6 @@ def select_by_obj_cnt(test_data, mask, obj_cnt):
     obj_cnt_diff = np.inf
     selected_row = None
     for row_idx, row in test_data.loc[mask].iterrows():
-        # print(row['cached_camera_name'], row['cached_camera_task_id'])
-        # cached_metadata = read_json_file(os.path.join(
-        #     CACHE_ROOT, row['cached_camera_name'],
-        #     "{}_metadata.json".format(row['hyp_id'])))
         cached_metadata = read_json_file(os.path.join(
             'tmp', row['cached_camera_name'],
             "{}_metadata.json".format(row['hyp_id'])))
@@ -44,7 +39,6 @@ def select_by_obj_cnt(test_data, mask, obj_cnt):
             row['task_id'])]['test']['class_distribution']
         candi_obj_cnt = np.sum(candi_cls_dist)
         # candi_dist = np.linalg.norm(np.array(cls_dist) - np.array(candi_cls_dist))
-        # print(cached_metadata[str(row['task_id'])]['test']['time_of_day'], tod)
         if np.abs(candi_obj_cnt - obj_cnt) < obj_cnt_diff:
             selected_row = row
             obj_cnt_diff = np.abs(candi_obj_cnt - obj_cnt)
@@ -56,41 +50,12 @@ def select_by_tod(test_data, mask, tod):
     selected_tod = []
     selected_tod_task_id = []
     for row_idx, row in test_data.loc[mask].iterrows():
-        # print(row['cached_camera_name'], row['cached_camera_task_id'])
-        # cached_metadata = read_json_file(os.path.join(
-        #     CACHE_ROOT, row['cached_camera_name'],
-        #     "{}_metadata.json".format(row['hyp_id'])))
         cached_metadata = read_json_file(os.path.join(
             'tmp', row['cached_camera_name'],
             "{}_metadata.json".format(row['hyp_id'])))
-        # print(cached_metadata[str(row['task_id'])]['test']['time_of_day'], tod)
         if cached_metadata[str(row['cached_camera_task_id'])]['test']['time_of_day'] == tod:
             selected_tod_accs.append(row['test_acc'])
-            print(row[['cached_camera_name', 'hyp_id', 'cached_camera_task_id']].to_list())
             return row['test_acc']
-            # break
-    #         selected_tod.append(row['cached_camera_name'])
-    #         selected_tod_task_id.append(row['cached_camera_task_id'])
-    # # print(selected_tod, selected_tod_task_id)
-    # tmp_selected_tod_accs = []
-    # tmp_selected_tod_model_names = []
-    # tmp_selected_tod_task_id = []
-    # tmp_selected_tod_config_id = []
-    # tmp_acc_max = np.inf
-    # for cam, tmp_task_id in zip(selected_tod, selected_tod_task_id):
-    #     selected_df = pd.read_csv(os.path.join(ROOT, '{}.csv'.format(cam)))
-    #     tmp_mask = (selected_df['cached_camera_name'] == cam) & (selected_df['task_id'] == tmp_task_id)
-    #     max_idx = selected_df[tmp_mask]['test_acc'].argmax()
-    #
-    #     tmp_selected_tod_accs.append()
-    #     import ipdb
-    #     ipdb.set_trace()
-        # tmp_
-    # if tmp_selected_tod_accs:
-    #     selected_tod_accs.append(max(tmp_selected_tod_accs))
-    # else:
-    #     selected_tod_accs.append(np.nan)
-    # return np.random.choice(selected_tod_accs)
 
 
 waymo_ekya_accs = []
@@ -101,7 +66,6 @@ waymo_selected_location_accs = []
 
 for city in CITIES:
     test_data = pd.read_csv(os.path.join(ROOT, '{}.csv'.format(city)))
-    # print(test_data.loc[:5])
     ekya_accs = []
     ekya_model_names = []
     cached_model_accs_mean = []
@@ -111,8 +75,6 @@ for city in CITIES:
     selected_tod_accs = []
     selected_obj_cnt_accs = []
     selected_location_accs = []
-    # metadata = read_json_file(os.path.join(
-    #     CACHE_ROOT, city, "0_metadata.json"))
     metadata = read_json_file(os.path.join(
         'tmp', city, "{}_metadata.json".format(0)))
     for task_id in range(1, 10):
@@ -123,25 +85,18 @@ for city in CITIES:
         mask = ((test_data['task_id'] == task_id) &
                 (test_data['cached_camera_task_id'] == task_id) &
                 (test_data['cached_camera_name'] == city))
-        # print(test_data.loc[mask, 'test_acc'].max())
-        # , 'test_acc']))
         ekya_accs.append(test_data.loc[mask, 'test_acc'].max())
-        # print(test_data.loc[mask, 'test_acc'].argmax())
         max_idx = test_data.loc[mask, 'test_acc'].argmax()
         ekya_model_names.append(
             test_data[mask].iloc[max_idx]['cached_camera_name'])
-        mask = (test_data['task_id'] == task_id) & (
-            test_data['cached_camera_name'].isin(["sf_000_009", "sf_020_029"]))
+        mask = (test_data['task_id'] == task_id) #& (
+            #test_data['cached_camera_name'].isin(["sf_000_009", "sf_020_029"]))
         # location_mask = (test_data['task_id'] == task_id) & (
         #     test_data['cached_camera_name']== city) # deprecated
 
-        # print(test_data.loc[mask])
         distance = np.inf
         best_row = None
         for row_idx, row in test_data.loc[mask].iterrows():
-            # cached_metadata = read_json_file(os.path.join(
-            #     CACHE_ROOT, row['cached_camera_name'],
-            #     "{}_metadata.json".format(row['hyp_id'])))
             cached_metadata = read_json_file(os.path.join(
                 'tmp', row['cached_camera_name'],
                 "{}_metadata.json".format(row['hyp_id'])))
@@ -164,22 +119,15 @@ for city in CITIES:
             select_by_obj_cnt(test_data, mask, obj_cnt))
         selected_location_accs.append(select_by_location(test_data, mask))
 
-    # print(ekya_accs)
-    print(ekya_model_names)
-    # print(cached_model_accs)
-    # fac = 1.6
-    plt.figure(figsize=(ASPECT*HEIGHT*1.3, HEIGHT*1.4))
-    # plt.plot(range(1, 10), cached_model_accs_max,
-    #          'o-', label="Cached Model Best Acc(Using Oracle Information)")
-    # plt.plot(range(1, 10), cached_model_accs_mean,
-    #          'o-', label="Cached Mean Acc(Using Oracle Information)")
-    # plt.plot(range(1, 10), cached_model_accs_min,
-    #          'o-', label="Cached Worst Acc(Using Oracle Information)")
+    # print(ekya_model_names)
     waymo_ekya_accs.extend(ekya_accs)
     waymo_selected_accs.extend(selected_accs)
     waymo_selected_tod_accs.extend(selected_tod_accs)
     waymo_selected_obj_cnt_accs.extend(selected_obj_cnt_accs)
     waymo_selected_location_accs.extend(selected_location_accs)
+    if city != 'sf_060_069':
+        continue
+    plt.figure(figsize=(ASPECT*HEIGHT*1.3, HEIGHT*1.4))
     ax = plt.gca()
     marker_size = 6
     line1, = ax.plot(range(1, 10), selected_accs, 'o-', c='C0', ms=marker_size,
@@ -198,18 +146,6 @@ for city in CITIES:
     ax.set_ylabel("Accuracy")
     ax.set_ylim(0., 1.0)
     ax.set_xlim(0.5, 9.5)
-    # plt.title(city + "Using golden Label")
-
-    # ax.legend((line0, line1, line2, line3, line4),
-    #           ("Ekya", "Time of day based", "Class distribution based",
-    #            "Object count based", "Location based"), loc="lower center",
-    #           bbox_to_anchor=(-0.05, 1.02, 1, 0.2), ncol=1, handletextpad=0.1,
-    #           borderaxespad=0.1,
-    #           borderpad=0.2,
-    #           handlelength=0.8,
-    #           columnspacing=0.1,
-    #           labelspacing=0.2,
-    #           handleheight=0.8, fontsize=11)
     ax.legend((line0, line1, line2, line3, line4),
               ("Ekya", "Time of day based", "Class distribution based",
                "Object count based", "Location based"), loc="lower right",
@@ -222,69 +158,9 @@ for city in CITIES:
               handleheight=0.8, fontsize=11.5)
     plt.grid(axis='y')
     plt.tight_layout()
-    # plt.savefig(f"new_{city}_golden_label.pdf")
+    plt.savefig(f"waymo_{city}_golden_label.pdf")
 
-plt.figure(figsize=(ASPECT*HEIGHT*1.3, HEIGHT * 1.4))
-ax = plt.gca()
-# plot absolute acct
-# bar0 = ax.bar([0], [np.mean(np.array(waymo_ekya_accs))], width=0.5, color=["C2"],
-#         yerr=[np.std(np.array(waymo_ekya_accs))],label="Ekya")
-# bar1 = ax.bar([1], [np.mean(np.array(waymo_selected_accs))], width=0.5, color=["C0"],
-#         yerr=[np.std(np.array(waymo_selected_accs))],
-#         label="Class distribution ba-\nsed model selection")
-# bar2 = ax.bar([2], [np.mean(np.array(waymo_selected_tod_accs))], width=0.5, color=["C1"],
-#         yerr=[np.std(np.array(waymo_selected_tod_accs))],
-#         label="Time of day based\nmodel selection")
-# bar3 = ax.bar([3], [np.mean(np.array(waymo_selected_obj_cnt_accs))], width=0.5, color=["C3"],
-#         yerr=[np.std(np.array(waymo_selected_obj_cnt_accs))],
-#         label="Object count based\nmodel selection")
-# bar4 = ax.bar([4], [np.mean(np.array(waymo_selected_location_accs))], width=0.5, color=["C4"],
-#         yerr=[np.std(np.array(waymo_selected_location_accs))],
-#         label="Location based\nmodel selection")
-cls_dist_mean = np.mean((-np.array(waymo_selected_accs) + np.array(waymo_ekya_accs)))# / np.array(waymo_selected_accs))
-tod_mean = np.mean((-np.array(waymo_selected_tod_accs) + np.array(waymo_ekya_accs))) #/ np.array(waymo_selected_tod_accs))
-obj_cnt_mean = np.mean((-np.array(waymo_selected_obj_cnt_accs) + np.array(waymo_ekya_accs))) # / np.array(waymo_selected_obj_cnt_accs))
-location_mean = np.mean((-np.array(waymo_selected_location_accs) + np.array(waymo_ekya_accs)))# / np.array(waymo_selected_location_accs))
-cls_dist_err = np.std(-np.array(waymo_selected_accs) + np.array(waymo_ekya_accs))/ np.sqrt(len(waymo_ekya_accs))# / np.array(waymo_selected_accs))
-tod_err = np.std(-np.array(waymo_selected_tod_accs) + np.array(waymo_ekya_accs))/ np.sqrt(len(waymo_ekya_accs))# / np.array(waymo_selected_tod_accs))
-obj_cnt_err = np.std(-np.array(waymo_selected_obj_cnt_accs) + np.array(waymo_ekya_accs))/ np.sqrt(len(waymo_ekya_accs))# / np.array(waymo_selected_obj_cnt_accs))
-location_err = np.std(-np.array(waymo_selected_location_accs) + np.array(waymo_ekya_accs))/ np.sqrt(len(waymo_ekya_accs))# / np.array(waymo_selected_location_accs))
-# import ipdb
-# ipdb.set_trace()
 
-bar1 = ax.bar([0], [cls_dist_mean], width=0.5, color=["C0"], yerr=[cls_dist_err])
-bar2 = ax.bar([1], [tod_mean], width=0.5, color=["C1"], yerr=[tod_err])
-bar3 = ax.bar([2], [obj_cnt_mean], width=0.5, color=["C3"], yerr=[obj_cnt_err])
-bar4 = ax.bar([3], [location_mean], width=0.5, color=["C4"], yerr=[location_err])
-# ax.set_xticks(np.arange(5))
-# ax.tick_params(
-#     axis='x',          # changes apply to the x-axis
-#     which='both',      # both major and minor ticks are affected
-#     bottom=False,      # ticks along the bottom edge are off
-#     top=False,         # ticks along the top edge are off
-#     labelbottom=False) # labels along the bottom edge are off
-ax.tick_params(axis='x', which='major', pad=0)
-ax.set_xticks(np.arange(4))
-ax.set_xticklabels(["Class\ndistribution\nbased", "Time of day\nbased", "Object count\nbased", "Location\nbased"], rotation=45, linespacing=0.8)
-# ax.set_ylabel("Accuracy")
-ax.set_ylabel("Ekya’s acc - Baseline's acc")
-ax.set_yticks([0, 0.1, 0.2, 0.3])
-ax.yaxis.set_label_coords(x=-0.15, y=0.4)
-# ax.set_yticklabels([0, 0.1, 0.2, 0.3])
-# ax.set_xlim(-0.27, 3.27)
-ax.set_ylim(0, 0.3)
-# ax.set_yticklabels(['0', '50', "100"])
-# ax.legend(loc="lower center",
-#           bbox_to_anchor=(0, 1.02, 1, 0.2), ncol=2, handletextpad=0.1,
-#           # borderaxespad=0.1,
-#           borderpad=0.2,
-#           handlelength=0.8,
-#           columnspacing=0.1,
-#           handleheight=0.8, fontsize="small")
-# ax.set_ylim(0.5, )
-plt.grid(axis='y')
-plt.tight_layout()
-# plt.savefig("new_waymo_reuse_cached_model.pdf")
 plt.figure(figsize=(ASPECT*HEIGHT*1.3, HEIGHT * 1.4))
 ax = plt.gca()
 
@@ -301,9 +177,7 @@ colors = ['C0', 'C1', 'C3', 'C4']
 for patch, color in zip(bp['boxes'], colors):
     patch.set_facecolor(color)
 for whisker in bp['whiskers']:
-    whisker.set(#color ='#8B008B',
-                #linewidth = 1.5,
-                linestyle =":")
+    whisker.set(linestyle =":")
 
 for median in bp['medians']:
     median.set(color ='yellow', linewidth = 1.5)
@@ -319,4 +193,4 @@ plt.tight_layout()
 # ax.set_xlim(0.5, 4.5)
 ax.set_ylim(-0.1, 0.8)
 # plt.show()
-plt.savefig("new_waymo_reuse_cached_model_boxplot.pdf")
+plt.savefig("waymo_reuse_cached_model_boxplot.pdf")
