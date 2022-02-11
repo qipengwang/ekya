@@ -12,6 +12,7 @@ from typing import List, Union
 
 import numpy as np
 import pandas as pd
+import PIL
 import tensorflow as tf
 import torch
 from PIL import Image
@@ -43,7 +44,7 @@ class WaymoClassification(VisionDataset):
                  transform: callable = None, target_transform: callable = None,
                  resize_res: int = 32, coco: bool = False,
                  merge_label: bool = True, segment_indices: List = None,
-                 **kwargs):
+                 label_type: str = 'human', **kwargs):
         """
         Constructor.
 
@@ -84,6 +85,7 @@ class WaymoClassification(VisionDataset):
         self.transform = transform
         self.subsample_idxs = subsample_idxs
         self.resize_res = resize_res
+        self.label_type = label_type
 
         self.coco = coco
         self.merge_label = merge_label
@@ -143,7 +145,8 @@ class WaymoClassification(VisionDataset):
                 self.samples.loc[types == 2, 'class'] = 9  # bicyle
         else:
             # remove unknown
-            self.samples.loc[:, 'class'] -= 1
+            # self.samples.loc[:, 'class'] -= 1
+            pass
         if not coco and not self.samples[self.samples['class'] > 3].empty:
             raise RuntimeError('class labels not in [0, 3]!')
         elif coco and merge_label and \
@@ -187,13 +190,18 @@ class WaymoClassification(VisionDataset):
         sample = self.samples.iloc[idx, :]
 
         img_name = sample['image name']
-        target = sample['class']
+        if self.label_type == 'human':
+            target = sample['class']
+        elif self.label_type == 'golden_label':
+            target = sample['golden_label']
+        else:
+            raise RuntimeError(f"Unrecognized label_type: {self.label_type}")
         seg_name = sample['segment']
         cam_name = sample['camera name']
         img_path = os.path.join(self.root, seg_name, cam_name, img_name)
         if self.resize_res is not None:
-            image = Image.open(img_path).resize((self.resize_res,
-                                                 self.resize_res))
+            image = Image.open(img_path).resize(
+                (self.resize_res, self.resize_res), resample=PIL.Image.BICUBIC)
         else:
             image = Image.open(img_path)
 
@@ -238,7 +246,8 @@ class WaymoClassification(VisionDataset):
                 class_filter_list)]["class"]
         return targets.values
 
-    def get_filtered_dataset(self, data_idxs, custom_transforms=None):
+    def get_filtered_dataset(self, data_idxs, label_type='human',
+                             custom_transforms=None):
         """Subsample the dataset.
 
         Args
@@ -250,15 +259,22 @@ class WaymoClassification(VisionDataset):
         """
         trsf = custom_transforms if custom_transforms is not None else \
             self.transform
-        return WaymoClassification(self.root, self.sample_list_name,
-                                   sample_list_root=self.sample_list_root,
-                                   subsample_idxs=data_idxs,
-                                   transform=trsf,
-                                   target_transform=self.target_transform,
-                                   coco=self.coco,
-                                   merge_label=self.merge_label,
-                                   resize_res=self.resize_res,
-                                   segment_indices=self.segment_indices)
+        dataset = WaymoClassification(self.root, self.sample_list_name,
+                                      sample_list_root=self.sample_list_root,
+                                      subsample_idxs=data_idxs,
+                                      transform=trsf,
+                                      target_transform=self.target_transform,
+                                      coco=self.coco,
+                                      merge_label=self.merge_label,
+                                      resize_res=self.resize_res,
+                                      segment_indices=self.segment_indices,
+                                      label_type=label_type)
+        for column_name in self.samples.columns:
+            if column_name not in dataset.samples.columns:
+                mask = self.samples["idx"].isin(data_idxs)
+                col2add = self.samples[mask][column_name]
+                dataset.samples[column_name] = col2add
+        return dataset
 
     def get_filtered_loader(self, data_idxs, custom_transforms=None, **kwargs):
         """Return a Pytorch dataloader with only samples in data_idxs.
@@ -291,7 +307,7 @@ class WaymoClassification(VisionDataset):
             sample_list_root=self.sample_list_root, transform=self.transform,
             target_transform=self.target_transform, resize_res=self.resize_res,
             coco=self.coco, merge_label=self.merge_label,
-            segment_indices=self.segment_indices)
+            segment_indices=self.segment_indices, label_type=self.label_type)
 
     def concat_dataset(self, other_dataset):
         '''
@@ -341,6 +357,35 @@ class WaymoClassification(VisionDataset):
         latter_indices = samples[tdiff >= split_time]['idx'].to_list()
         return former_indices, latter_indices
 
+    def get_class_dist(self):
+        """Return class distribution of all samples."""
+        class_dist = []
+        if self.merge_label:
+            class_cnt = 4
+        else:
+            class_cnt = 10
+        for i in range(class_cnt):
+            mask = self.samples['class'] == i
+            class_dist.append(len(self.samples[mask]))
+        return class_dist
+
+    def get_image_paths(self):
+        """Return image path of all samples."""
+        for idx, row in self.samples.iterrows():
+            if idx % 5 == 0:
+                print(os.path.join("/data/zxxia/ekya/datasets/waymo_classification_images", row['segment'], row['camera name'], row['image name']))
+        #     mask = self.samples['class'] == i
+        #     class_dist.append(len(self.samples[mask]))
+        # return class_dist
+
+    def get_time_of_day(self):
+        """Return the majority of weather of all samples."""
+        return self.samples['time of day'].mode().values[0]
+
+    def get_weather(self):
+        """Return the majority of weather of all samples."""
+        return self.samples['weather'].mode().values[0]
+
     @staticmethod
     def get_camera_resolution(cam_calibrations, cam_name):
         """Get camera resolution."""
@@ -386,7 +431,8 @@ class WaymoClassification(VisionDataset):
         '''
         assert writer is not None
         sample_cnt = 0
-        last_frame_timestamp = {} # Camera_name to last frame mapping for enforcing min_time_gap
+        # Camera_name to last frame mapping for enforcing min_time_gap
+        last_frame_timestamp = {}
         for frame_idx, data in enumerate(segment):
             frame = open_dataset.Frame()
             frame.ParseFromString(bytearray(data.numpy()))
@@ -396,11 +442,13 @@ class WaymoClassification(VisionDataset):
                 #     continue
 
                 # Min time gap check
-                camera_name = open_dataset.CameraName.Name.Name(image.name)  # FRONT, SIDE_LEFT etc.
+                # FRONT, SIDE_LEFT etc.
+                camera_name = open_dataset.CameraName.Name.Name(image.name)
                 this_ts = frame.timestamp_micros
                 last_ts = last_frame_timestamp.get(camera_name, 0)
                 # if last frame was extracted within min_time_gap, move onto next frame
-                if this_ts - last_ts < min_time_gap * (10**6):  # Micro sec conversion
+                # Micro sec conversion
+                if this_ts - last_ts < min_time_gap * (10**6):
                     continue
                 # if not, update last ts and run extraction
                 last_frame_timestamp[camera_name] = this_ts
@@ -538,7 +586,8 @@ class WaymoClassification(VisionDataset):
             seg_ts = datetime.utcfromtimestamp(pair[1]/1000000)
             tfrec_path = pair[0]
             if "/tank/zxxia/waymo" in tfrec_path:
-                tfrec_path = tfrec_path.replace("/tank/zxxia/waymo", waymo_root)
+                tfrec_path = tfrec_path.replace(
+                    "/tank/zxxia/waymo", waymo_root)
             if date_range is None:
                 seg_files.append(tfrec_path)
             elif date_range[0] <= seg_ts <= date_range[1]:

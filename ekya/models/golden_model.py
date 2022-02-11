@@ -1,5 +1,4 @@
 """Abstraction of golden model in ekya."""
-import ipdb
 import torch
 import torchvision.models as models
 
