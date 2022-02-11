@@ -9,5 +9,6 @@ setup(
     description='Ekya - A system for online training',
     packages=find_packages(),
     install_requires=['ray', 'tensorflow', 'waymo-open-dataset',
-                      'opencv-contrib-python', "tensorflow==2.2.0"],
+                      'opencv-contrib-python', 'tensorflow==2.2.0',
+                      'matplotlib', 'pandas'],
 )
