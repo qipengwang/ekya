@@ -10,31 +10,23 @@ NUM_TASKS=10
 # DATASET_NAME='cityscapes'
 DATASET_NAME='waymo'
 MODEL_NAME='resnet18'
-HYPS_PATH='../experiment_drivers/profiling/hyp_map_all.json'
+HYPS_PATH='./hyp_map_all.json'
 if [ ${DATASET_NAME} = 'cityscapes' ]
 then
     echo "cityscapes"
-    DATASET_PATH='/data/zxxia/ekya/datasets/CityScapes'
+    DATASET_PATH='../../datasets/CityScapes'
     CITIES=" bochum bremen cologne darmstadt dusseldorf jena monchengladbach stuttgart tubingen zurich"
-    # CITIES="aachen"
-    NO_TRAIN_MODEL_PATH='/data/zxxia/ekya/cityscapes_saved_models/pretrain_models_romil/pretrained_cityscapes_fftmunster_'${MODEL_NAME}'_1024x2.pt'
+    NO_TRAIN_MODEL_PATH='../../pretrained_models/pretrained_cityscapes_fftmunster_'${MODEL_NAME}'_1024x2.pt'
 
-    SAVE_PATH='/data2/zxxia/ekya/results/model_reuse'
+    SAVE_PATH='./results_golden_label_cityscapes'
 elif [ ${DATASET_NAME} = 'waymo' ]
 then
     echo 'waymo'
-    DATASET_PATH='/data/zxxia/ekya/datasets/waymo_classification_images'
-    CITIES="sf_000_009 sf_020_029"
-    # CITIES="sf_020_029"
-    # CITIES="sf_030_039"
-    # CITIES="sf_050_059"
-    # CITIES="sf_060_069"
-    # CITIES="sf_070_079"
-    # CITIES="sf_080_089"
-    # CITIES="sf_000_009 sf_020_029 sf_030_039 sf_050_059 sf_060_069 sf_070_079 sf_080_089"
+    DATASET_PATH='../../datasets/waymo/waymo_classification_images'
+    CITIES="sf_000_009 sf_020_029 sf_030_039 sf_050_059 sf_060_069 sf_070_079 sf_080_089"
 
-    SAVE_PATH='/data2/zxxia/ekya/ekya/model_cache/results_golden_label'
-    NO_TRAIN_MODEL_PATH='/data/zxxia/ekya/saved_models/waymo_resnet18_64.pth'
+    SAVE_PATH='./results_golden_label_waymo'
+    NO_TRAIN_MODEL_PATH='../../pretrained_models/waymo/waymo_resnet18_64.pth'
 else
     echo 'Dataset type not supported!'
 fi
