@@ -228,6 +228,11 @@ into ```ekya/object_detection_model/```.
 
 ## Prepare Waymo Dataset
 
+### Download Processed Waymo Dataset
+Download from [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb) into ```ekya/dataset/waymo```.
+
+### Download Original Waymo Dataset
+
 1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
 2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
 3. Click "tar files".
