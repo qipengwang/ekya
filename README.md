@@ -3,12 +3,12 @@ Ekya is a system which enables continuous learning on resource constrained devic
 
 ![Ekya Architecture](https://i.imgur.com/ng1jLsS.png)
 
-More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf). 
+More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf).
 
 # Installation
 
 1. First checkout Ray repository. Ekya requires first building a particular branch of Ray from source. Ekya uses commit `cf53b351471716e7bfa71d36368ebea9b0e219c5` (`Ray 0.9.0.dev0`) from the Ray repository.
-`pip install ray` is not sufficient. 
+`pip install ray` is not sufficient.
 ```bash
 git clone https://github.com/ray-project/ray/
 cd ray
@@ -29,6 +29,8 @@ ray/ci/travis/install-bazel.sh
 
 # Build the dashboard
 # (requires Node.js, see https://nodejs.org/ for more information).
+# If folder "ray/dasboard/client" does not exist, please move forward to
+# "Install ray"
 pushd ray/dashboard/client
 npm install
 npm run build
@@ -42,7 +44,7 @@ pip install -e . --verbose  # Add --user if you see a permission denied error.
 ```
 git clone https://github.com/romilbhardwaj/ekya/
 pip install -e . --verbose
-``` 
+```
 4. Install [Nvidia Multiprocess Service (MPS)](https://docs.nvidia.com/deploy/mps/index.html).
 ```
 sudo apt-get update
@@ -56,12 +58,12 @@ nvidia-cuda-mps-control -d
 ```
 
 # Running Ekya with Cityscapes Dataset
-1. Setup the Cityscapes dataset using the instructions on the [website](https://www.cityscapes-dataset.com/) 
+1. Setup the Cityscapes dataset using the instructions on the [website](https://www.cityscapes-dataset.com/)
 2. Download the pretrained models for cityscapes from [here](https://drive.google.com/drive/folders/15qE5IBFAkKuiDeUcV8xQPvpKXq1Zk6yT?usp=sharing).
 3. Run the multicity training script is provided with Ekya.
  ```
 ./ekya/experiment_drivers/driver_multicity.sh
-``` 
+```
 You may need to modify `DATASET_PATH` and `MODEL_PATH` to point to your dataset and pretrained models dir, respectively.
 This script will run all schedulers, including `thief`, `fair` and `noretrain`.
 
@@ -209,3 +211,64 @@ optional arguments:
                         ceiling for the inference scaling function.
 
 ```
+
+## Golden Model
+
+The golden model is used to generate image classification groundtruth in Ekya.
+Please download resnext101 elastic model from
+[here](https://github.com/allenai/elastic) into ```ekya/golden_model/```.
+
+
+## Object Detection Model
+
+The object detection model is used to identify objects from video frames.
+Please download ```faster_rcnn_resnet101_coco_2018_01_28``` from
+[here](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md)
+into ```ekya/object_detection_model/```.
+
+## Prepare Waymo Dataset
+
+### Download Processed Waymo Dataset
+Download from [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb) into ```ekya/dataset/waymo```.
+
+### Download Original Waymo Dataset
+
+1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
+2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
+3. Click "tar files".
+
+
+## Prepare MP4(Vegas) Dataset
+
+```
+cd ekya/ekya/experiment_drivers
+python driver_prepare_mp4.py \
+    --dataset vegas \
+    --dataset-root ../../dataset \
+    --device 0 \
+    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
+```
+
+## Prepare MP4(Bellevue) Dataset
+
+```
+cd ekya/ekya/experiment_drivers
+python driver_prepare_mp4.py \
+    --dataset bellevue \
+    --dataset-root ../../dataset \
+    --device 0 \
+    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
+```
+
+## Frequently Asked Questions
+
+1. When installing ray with `pip install -e . --verbose` and encountering the
+   error `"[ray] [bazel] build failure, error --experimental_ui_deduplicate
+   unrecognized"`.
+
+    Please checkout this
+    [issue](https://github.com/ray-project/ray/issues/11237). If other versions
+    of `bazel` are installed, please install `bazel-3.2.0` following instructions
+    from
+    [here](https://docs.bazel.build/versions/main/install-compile-source.html)
+    and compile ray useing `bazel-3.2.0`.
