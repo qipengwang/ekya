@@ -1,13 +1,53 @@
 # Ekya: Continuous Learning on the Edge
 Ekya is a system which enables continuous learning on resource constrained devices.
+Given a set of video streams and pre-trained models, Ekya can continuously fine-tune the models to maximize accuracy by intelligently allocating resources between live inference and retraining in the background. 
 
-![Ekya Architecture](https://i.imgur.com/ng1jLsS.png)
+At the core of Ekya is the Thief Scheduler, which operates by stealing small resource chunks from a selected job and reallocating them to a more promising job. The thief scheduler obtains information about the "promise" of a job through the micro-profiling mechanism, which runs each retraining job for a short duration to estimate it's future performance.
 
-More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf).
+This architecture diagram highlights the flow of data in Ekya. More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf).
 
-# Installation
+<p align="center">
+    <img src="https://i.imgur.com/ng1jLsS.png" width="500">
+</p>
 
-1. First checkout Ray repository. Ekya requires first building a particular branch of Ray from source. Ekya uses commit `cf53b351471716e7bfa71d36368ebea9b0e219c5` (`Ray 0.9.0.dev0`) from the Ray repository.
+# Datasets
+As a part of this repository, we release two new video datasets - Urban Traffic and Urban Building. In addition, Ekya can also run on the Cityscapes and Waymo datasets (see instructions below).
+
+We have labelled both Urban Traffic and Urban Building datasets using our golden model (ResNeXT-101 trained on MS COCO). These labels are stored in files called samplelists. 
+The samplelists for each video clip, containing the objects detected and their labels can be found in the `samplelists` directory in the dataset folder. 
+
+Each samplelist is a CSV with 6 columns: `["idx", "class", "x0", "y0", "x1", "y1"]`. Each column is described below:
+
+* `idx`: row index
+* `class`: Object class
+* `x0`: X coordinates of top left of bounding box
+* `y0`: Y coordinates of top left of bounding box
+* `x1`: X coordinates of bottom right of bounding box
+* `y1`: Y coordinates of bottom right of bounding box
+
+Origin for the image is at the top right of the video frame.   
+
+## Urban Traffic Dataset
+<p align="center">
+    <img src="https://i.imgur.com/tV4M1oZ.png" width="500">
+</p>
+
+This dataset contains 62GB of traffic videos recorded from five pole mounted fish-eye cameras in the city of Bellevue, WA. Each of the five cameras has video clips of lengths upto one hour.
+
+Download links:
+* [Camera 1 Videos](https://github.com/ekya-project/ekya)
+* [Camera 2 Videos](https://github.com/ekya-project/ekya)
+* [Camera 3 Videos](https://github.com/ekya-project/ekya)
+* [Camera 4 Videos](https://github.com/ekya-project/ekya)
+* [Camera 5 Videos](https://github.com/ekya-project/ekya) 
+
+## TODO: Urban Building Dataset
+
+
+# Running Ekya
+## Installation
+
+1. Checkout Ray repository. Ekya requires first building a particular branch of Ray from source. Ekya uses commit `cf53b351471716e7bfa71d36368ebea9b0e219c5` (`Ray 0.9.0.dev0`) from the Ray repository.
 `pip install ray` is not sufficient.
 ```bash
 git clone https://github.com/ray-project/ray/
@@ -42,7 +82,7 @@ pip install -e . --verbose  # Add --user if you see a permission denied error.
 ```
 3. After installing ray, clone the Ekya repository and install Ekya.
 ```
-git clone https://github.com/romilbhardwaj/ekya/
+git clone https://github.com/ekya-project/ekya/
 pip install -e . --verbose
 ```
 4. Install [Nvidia Multiprocess Service (MPS)](https://docs.nvidia.com/deploy/mps/index.html).
@@ -57,15 +97,149 @@ nvidia-smi -i 2 -c EXCLUSIVE_PROCESS
 nvidia-cuda-mps-control -d
 ```
 
-# Running Ekya with Cityscapes Dataset
-1. Setup the Cityscapes dataset using the instructions on the [website](https://www.cityscapes-dataset.com/)
-2. Download the pretrained models for cityscapes from [here](https://drive.google.com/drive/folders/15qE5IBFAkKuiDeUcV8xQPvpKXq1Zk6yT?usp=sharing).
-3. Run the multicity training script is provided with Ekya.
+**NOTE**: Starting version `410.74`, Nvidia MPS does not necessarily honor GPU resource allocation for tasks. Please use version `392` or lower.  
+
+## Preparing Models
+
+### Golden Model
+
+The golden model is used to generate image classification groundtruth in Ekya.
+Please download resnext101 elastic model from
+[here](https://github.com/allenai/elastic) into ```ekya/golden_model/```.
+
+
+### Object Detection Model
+
+The object detection model is used to identify objects from video frames.
+Please download ```faster_rcnn_resnet101_coco_2018_01_28``` from
+[here](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md)
+into ```ekya/object_detection_model/```.
+
+## Running Ekya with Cityscapes Dataset
+
+### Preprocessing the Cityscapes Dataset
+1. Download the Cityscapes dataset using the instructions on the [website](https://www.cityscapes-dataset.com/) and extract the `leftImg8bit` subdirectory to your work directory.
+2. Generate the samplelists by running
+```
+./ekya/datasets/scripts/cityscapes_generate_samplelists.sh
+```
+You will need to configure the `DATASET_PATH` ` to point to your dataset.
+
+TODO: Fix the scripts    
+
+### Running Ekya
+3. Download the pretrained models for citysapes from [here](https://drive.google.com/drive/folders/15qE5IBFAkKuiDeUcV8xQPvpKXq1Zk6yT?usp=sharing) and extract them to a directory.
+4. Run the multicity training script provided with Ekya.
  ```
 ./ekya/experiment_drivers/driver_multicity.sh
 ```
-You may need to modify `DATASET_PATH` and `MODEL_PATH` to point to your dataset and pretrained models dir, respectively.
+You may need to modify `DATASET_PATH` and `MODEL_PATH` to point to your dataset and pretrained models dir, respectively. You must also set `NUM_GPUS` to reflect the number of GPUs to use.
 This script will run all schedulers, including `thief`, `fair` and `noretrain`.
+
+5. The results will be written in a timestamped directory at `results/ekya_expts/cityscapes/`.
+
+### Plotting results
+To reproduce the results, you will need to run the driver script from step 5 for different `NUM_GPUS` counts. Once you have done so, collect all the result directories. You can then use the `/viz/driver_viz_multicity.ipynb` notebook to plot your results.
+
+## Running Ekya with the Waymo Dataset
+
+### Download Original Waymo Dataset
+
+1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
+2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
+3. Click "tar files".
+
+### Download Processed Waymo Dataset
+4. Download from [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb) into ```ekya/dataset/waymo```.
+
+### Running Ekya
+TODO: Add instructions
+
+
+## Running Ekya with Urban Traffic Dataset
+TODO
+### Prepare MP4(Bellevue) Dataset
+
+```
+cd ekya/ekya/experiment_drivers
+python driver_prepare_mp4.py \
+    --dataset bellevue \
+    --dataset-root ../../dataset \
+    --device 0 \
+    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
+```
+
+
+## Running Ekya with Urban Building Dataset
+TODO
+## Prepare MP4(Vegas) Dataset
+
+```
+cd ekya/ekya/experiment_drivers
+python driver_prepare_mp4.py \
+    --dataset vegas \
+    --dataset-root ../../dataset \
+    --device 0 \
+    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
+```
+
+# Strawman Models
+TODO: point to scripts.
+
+# Extending Ekya
+Ekya can be easily extended in two dimensions - adding custom schedulers and adding new continuous learning techniques.
+
+### Adding Custom Schedulers to Ekya
+Ekya schedulers are implemented in `ekya/scheduelers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
+TODO. fix.
+```
+class BaseScheduler(object):
+    def __init__(self):
+        pass
+
+    def reallocation_callback(self,
+                              completed_camera_name: str,
+                              inference_resource_weights: dict,
+                              training_resources_weights: dict) -> [dict, dict]:
+        '''
+        This callback is called when a training job completes. This provides the scheduler an opportunity to reconfigure
+        resource allocations for jobs. Currently, only changes to to the inference resources are reflected
+        (because updating training jobs would require process restarts, an expensive operation).
+        :param completed_camera_name: str, name of the job completed
+        :param inference_resource_weights: the current inference resource allocation
+        :param training_resources_weights: the current training resource allocation
+        :return: new_inference_resource_weights, new_training_resources_weights
+        '''
+        pass
+
+    def get_inference_schedule(self,
+                                cameras: List[Camera],
+                                resources: float):
+        '''
+        Returns the schedule when inference only jobs must be run. This must be super fast since this is the schedule
+        used before the get_schedule actual schedule is obtained.
+        :param cameras: list of cameras
+        :param resources: total resources in the system to be split across tasks
+        :return: inference resource weights, hyperparameters
+        '''
+        pass
+```
+
+### Adding Custom Models to Ekya
+
+## Frequently Asked Questions
+
+1. When installing ray with `pip install -e . --verbose` and encountering the
+   error `"[ray] [bazel] build failure, error --experimental_ui_deduplicate
+   unrecognized"`.
+
+    Please checkout this
+    [issue](https://github.com/ray-project/ray/issues/11237). If other versions
+    of `bazel` are installed, please install `bazel-3.2.0` following instructions
+    from
+    [here](https://docs.bazel.build/versions/main/install-compile-source.html)
+    and compile ray useing `bazel-3.2.0`.
+
 
 ## Ekya driver script usage guide
 ```
@@ -211,64 +385,3 @@ optional arguments:
                         ceiling for the inference scaling function.
 
 ```
-
-## Golden Model
-
-The golden model is used to generate image classification groundtruth in Ekya.
-Please download resnext101 elastic model from
-[here](https://github.com/allenai/elastic) into ```ekya/golden_model/```.
-
-
-## Object Detection Model
-
-The object detection model is used to identify objects from video frames.
-Please download ```faster_rcnn_resnet101_coco_2018_01_28``` from
-[here](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md)
-into ```ekya/object_detection_model/```.
-
-## Prepare Waymo Dataset
-
-### Download Processed Waymo Dataset
-Download from [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb) into ```ekya/dataset/waymo```.
-
-### Download Original Waymo Dataset
-
-1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
-2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
-3. Click "tar files".
-
-
-## Prepare MP4(Vegas) Dataset
-
-```
-cd ekya/ekya/experiment_drivers
-python driver_prepare_mp4.py \
-    --dataset vegas \
-    --dataset-root ../../dataset \
-    --device 0 \
-    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
-```
-
-## Prepare MP4(Bellevue) Dataset
-
-```
-cd ekya/ekya/experiment_drivers
-python driver_prepare_mp4.py \
-    --dataset bellevue \
-    --dataset-root ../../dataset \
-    --device 0 \
-    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
-```
-
-## Frequently Asked Questions
-
-1. When installing ray with `pip install -e . --verbose` and encountering the
-   error `"[ray] [bazel] build failure, error --experimental_ui_deduplicate
-   unrecognized"`.
-
-    Please checkout this
-    [issue](https://github.com/ray-project/ray/issues/11237). If other versions
-    of `bazel` are installed, please install `bazel-3.2.0` following instructions
-    from
-    [here](https://docs.bazel.build/versions/main/install-compile-source.html)
-    and compile ray useing `bazel-3.2.0`.
