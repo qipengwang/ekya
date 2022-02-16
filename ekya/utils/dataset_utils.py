@@ -36,6 +36,15 @@ def get_dataset(name: str) -> [VisionDataset, dict]:
         default_args = {"trsf": trsf,
                         "use_cache": True,
                         "num_classes": 4}
+    elif name == 'mp4':
+        from ekya.datasets.Mp4VideoClassification import Mp4VideoClassification
+        trsf = transforms.Compose([transforms.ToTensor(),
+                                   transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                        std=[0.229, 0.224, 0.225])])
+        dataset_class = Mp4VideoClassification
+        default_args = {"trsf": trsf,
+                        "use_cache": True,
+                        "num_classes": 6}
     else:
         raise NotImplementedError("Dataset {} not implemented.".format(name))
     return dataset_class, default_args

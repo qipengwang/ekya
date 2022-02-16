@@ -15,6 +15,9 @@ if __name__ == '__main__':
     args = get_parser().parse_args()
     args = vars(args)  # Converting argparse Namespace to a dict.
 
+    model_save_path = args['checkpoint_path']
+    golden_model_ckpt = args['golden_model_ckpt_path']
+    label_type = "golden_label" if args["golden_label"] else "human"
     NUM_EPOCHS = args["epochs"]
     NUM_TASKS = args["num_tasks"]
     STARTING_TASK = args['start_task']
@@ -53,7 +56,9 @@ if __name__ == '__main__':
                       dataset_root=root,
                       pretrained_sample_names=pretrained_cities,
                       inference_profile_path=inference_profile_path,
-                      max_inference_resources=max_inference_resources
+                      max_inference_resources=max_inference_resources,
+                      label_type=label_type,
+                      golden_model_ckpt=golden_model_ckpt
                       ) for i, c in enumerate(cities)]
 
     # Read hyperparams

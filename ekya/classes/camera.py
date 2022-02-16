@@ -12,6 +12,8 @@ from ekya.classes.model import RayMLModel
 from ekya.utils.dataset_utils import get_dataset
 from ekya.datasets.CityscapesClassification import CityscapesClassification
 from ekya.datasets.WaymoClassification import WaymoClassification
+from ekya.datasets.Mp4VideoClassification import Mp4VideoClassification
+from ekya.models.golden_model import GoldenModel
 
 # Set random seed for reproducibility
 from ekya.utils.helpers import seed_all, seed_python
@@ -29,7 +31,9 @@ class Camera(object):
                  dataset_name: str = "cityscapes",
                  dataset_root: str = "",
                  inference_profile_path: str = "",
-                 max_inference_resources: float = 0.25):
+                 max_inference_resources: float = 0.25,
+                 label_type: str = "human",
+                 golden_model_ckpt: str = ""):
         '''
         :param id: String id of the camera.
         :param train_sample_names: Sample lists to use as input.
@@ -48,24 +52,40 @@ class Camera(object):
         self.dataset_root = dataset_root or dataset_default_args["root"]
         self.num_classes = dataset_default_args["num_classes"]
         self.sample_list_path = sample_list_path or dataset_default_args['sample_list_root']
+        self.golden_model_ckpt = golden_model_ckpt
         print(self.dataset_root)
         self.dataset = dataset_class(root=self.dataset_root,
                                      sample_list_name=train_sample_names,
                                      sample_list_root=self.sample_list_path,
                                      transform=dataset_default_args['trsf'],
                                      resize_res=224,
-                                     use_cache=dataset_default_args['use_cache'])
+                                     use_cache=dataset_default_args['use_cache'], label_type=label_type)
         print("[Camera {}] Using train samples from {}\nDataset size {}".format(self.id,
                                                                                 train_sample_names,
                                                                                 len(self.dataset)))
         self.pretrained_sample_names = pretrained_sample_names
         if pretrained_sample_names:
-            self.dataset_pretrained = dataset_class(root=self.dataset_root,
-                                                    sample_list_name=pretrained_sample_names,
-                                                    sample_list_root=self.sample_list_path,
-                                                    transform=dataset_default_args['trsf'],
-                                                    resize_res=224,
-                                                    use_cache=dataset_default_args['use_cache'])
+            if label_type == 'golden_label' and self.golden_model_ckpt != "":
+                self.dataset_pretrained = dataset_class(
+                    root=self.dataset_root,
+                    sample_list_name=pretrained_sample_names,
+                    sample_list_root=self.sample_list_path,
+                    transform=dataset_default_args['trsf'], resize_res=224,
+                    use_cache=dataset_default_args['use_cache'])
+                loader = torch.utils.data.DataLoader(
+                    self.dataset_pretrained, batch_size=64, num_workers=8)
+                golden_labels = generate_golden_model_labels(
+                    loader, self.golden_model_ckpt)
+                self.dataset_pretrained.samples.loc[:, 'golden_label'] = golden_labels
+                self.dataset_pretrained.label_type = label_type
+            else:
+                self.dataset_pretrained = dataset_class(
+                    root=self.dataset_root,
+                    sample_list_name=pretrained_sample_names,
+                    sample_list_root=self.sample_list_path,
+                    transform=dataset_default_args['trsf'], resize_res=224,
+                    use_cache=dataset_default_args['use_cache'],
+                    label_type=label_type)
             print("[Camera {}] Using pretrained samples for retraining: {}\nPretrained dataset size {}".format(self.id,
                                                                                                             pretrained_sample_names,
                                                                                                             len(self.dataset_pretrained)))
@@ -145,10 +165,15 @@ class Camera(object):
             # task_data_idxs_train = task_data_idxs[:int(self.train_split * len(task_data_idxs))]
             # task_data_idxs_val = task_data_idxs[int(self.train_split * len(task_data_idxs)):]
 
+            if self.dataset.label_type == 'golden_label':
+                label_type = 'golden_label'
+            else:
+                label_type = 'human'
+            # use golden model label to retrain
             task_train_dataset = self.dataset.get_filtered_dataset(
-                task_data_idxs_train)
+                task_data_idxs_train, label_type=label_type)
             task_val_dataset = self.dataset.get_filtered_dataset(
-                task_data_idxs_val)
+                task_data_idxs_val, label_type=label_type)
 
             if self.pretrained_sample_names:
                 # Setup pretrained dataset
@@ -160,7 +185,8 @@ class Camera(object):
                 pretrained_subsample_idxs = np.random.choice(
                     pretrained_subsample_idxs, num_samples_to_pick,
                     replace=False)
-                pretrained_subsampled_dataset = self.dataset_pretrained.get_filtered_dataset(pretrained_subsample_idxs)
+                pretrained_subsampled_dataset = self.dataset_pretrained.get_filtered_dataset(
+                    pretrained_subsample_idxs, label_type=label_type)
 
                 # Concat to train and validation
                 task_train_dataset.concat_dataset(pretrained_subsampled_dataset)
@@ -176,7 +202,13 @@ class Camera(object):
         task_idxs_test = self.dataset_idxs[
                          self.num_samples_per_task * task_id:
                          self.num_samples_per_task * (task_id + 1)]
-        task_dataset_test = self.dataset.get_filtered_dataset(task_idxs_test)
+        if self.dataset.label_type == 'golden_label':
+            label_type = 'golden_label'
+        else:
+            label_type = 'human'
+        # use golden model to test
+        task_dataset_test = self.dataset.get_filtered_dataset(
+            task_idxs_test, label_type=label_type)
         task_dataset_test_loader = torch.utils.data.DataLoader(
             task_dataset_test, batch_size=test_batch_size, shuffle=shuffle,
             num_workers=num_workers)
@@ -227,7 +259,6 @@ class Camera(object):
             task = segments[task_id-1]
         except KeyError:
             print(task_id, len(segments))
-            import ipdb; ipdb.set_trace()
 
         # Get train set from previous task
         # if task_idx == task_offset:
@@ -279,9 +310,13 @@ class Camera(object):
             self.train_split * len(task_data_idxs))]
         task_data_idxs_val = task_data_idxs[int(
             self.train_split * len(task_data_idxs)):]
+        if self.dataset.label_type == 'golden_label':
+            label_type = 'golden_label'
+        else:
+            label_type = 'human'
 
         task_train_dataset = self.dataset.get_filtered_dataset(
-            task_data_idxs_train)
+            task_data_idxs_train, label_type=label_type)
         # task_train_dataset = ConcatDataset(
         #     [task_train_dataset, pretrained_subsampled_dataset])
         if len(task_train_dataset) < train_batch_size:
@@ -291,10 +326,10 @@ class Camera(object):
         else:
             task_dataset_train_loader = torch.utils.data.DataLoader(
                 task_train_dataset, batch_size=train_batch_size,
-                shuffle=shuffle, num_workers=num_workers, drop_last=True)
+                shuffle=shuffle, num_workers=num_workers)
 
         task_val_dataset = self.dataset.get_filtered_dataset(
-            task_data_idxs_val)
+            task_data_idxs_val, label_type=label_type)
         # task_val_dataset = ConcatDataset(
         #     [task_val_dataset, pretrained_subsampled_dataset])
         if len(task_val_dataset) < train_batch_size:
@@ -304,7 +339,7 @@ class Camera(object):
         else:
             task_dataset_val_loader = torch.utils.data.DataLoader(
                 task_val_dataset, batch_size=train_batch_size, shuffle=shuffle,
-                num_workers=num_workers, drop_last=True)
+                num_workers=num_workers)
 
         print(f"Subsampling done. "
               f"Task {task} train data: {len(task_train_dataset)}, "
@@ -315,7 +350,8 @@ class Camera(object):
             import pdb
             pdb.set_trace()
         task_idxs_test = latter_idxs
-        task_dataset_test = self.dataset.get_filtered_dataset(task_idxs_test)
+        task_dataset_test = self.dataset.get_filtered_dataset(
+            task_idxs_test, label_type=label_type)
         if len(task_dataset_test) < test_batch_size:
             task_dataset_test_loader = torch.utils.data.DataLoader(
                 task_dataset_test, batch_size=test_batch_size, shuffle=shuffle,
@@ -323,13 +359,112 @@ class Camera(object):
         else:
             task_dataset_test_loader = torch.utils.data.DataLoader(
                 task_dataset_test, batch_size=test_batch_size, shuffle=shuffle,
-                num_workers=num_workers, drop_last=True)
+                num_workers=num_workers)
 
         # NOTE: Adding test every epoch because profiling
         dataloaders_dict = {'train': task_dataset_train_loader,
                             'val': task_dataset_val_loader,
                             'test': task_dataset_test_loader}
 
+        return dataloaders_dict
+
+    def _get_mp4_dataloader(self, task_id, train_batch_size, test_batch_size,
+                            num_workers, subsample_rate, shuffle):
+        if task_id == 0:
+            # If first task, no retraining and validation just test
+            task_dataset_train_loader = None
+            task_dataset_val_loader = None
+        else:
+            # We do not include data history. The following line implements
+            # that, uncomment it and comment the above one if you want to use
+            # entire history.
+            task_data_idxs = self.dataset_idxs[
+                0:self.num_samples_per_task * task_id].values.copy()
+            if len(task_data_idxs) > 2000:
+                task_data_idxs = np.random.choice(
+                    task_data_idxs, 2000, replace=False)
+            # task_data_idxs = self.dataset_idxs[
+            #     self.num_samples_per_task * (task_id - 1):self.num_samples_per_task * task_id].values.copy()
+            # TODO: Uncomment shuffle
+            # random.shuffle(task_data_idxs)
+
+            # Pick at least two samples.
+            num_samples_to_pick = max(int(
+                len(task_data_idxs) * subsample_rate), 2)
+            task_data_subsampled_idxs = np.random.choice(
+                task_data_idxs, num_samples_to_pick, replace=False)
+            # task_data_subsampled_idxs = np.sort(task_data_subsampled_idxs)
+
+            # Make sure to leave atleast one sample for validation
+            train_end_idx = min(
+                int(self.train_split * len(task_data_subsampled_idxs)),
+                len(task_data_subsampled_idxs) - 1)
+            task_data_idxs_train = task_data_subsampled_idxs[:train_end_idx]
+            # Validation: all samples except training samples
+            # TODO(romilb): Shouldnt this be from task_data_subsampled_idxs?
+            task_data_idxs_val = [
+                x for x in task_data_idxs if x not in task_data_idxs_train]
+
+            # task_data_idxs_train = task_data_idxs[:int(self.train_split * len(task_data_idxs))]
+            # task_data_idxs_val = task_data_idxs[int(self.train_split * len(task_data_idxs)):]
+
+            if self.dataset.label_type == 'golden_label':
+                label_type = 'golden_label'
+            else:
+                label_type = 'human'
+            # use golden model label to retrain
+            task_train_dataset = self.dataset.get_filtered_dataset(
+                task_data_idxs_train, label_type=label_type)
+            task_val_dataset = self.dataset.get_filtered_dataset(
+                task_data_idxs_val, label_type=label_type)
+
+            if self.pretrained_sample_names:
+                # Setup pretrained dataset
+                pretrained_subsample_idxs = self.dataset_pretrained.samples["idx"].values
+
+                # Pick at least two samples.
+                num_samples_to_pick = max(
+                    int(len(pretrained_subsample_idxs) * subsample_rate), 2)
+                pretrained_subsample_idxs = np.random.choice(
+                    pretrained_subsample_idxs, num_samples_to_pick,
+                    replace=False)
+                pretrained_subsampled_dataset = self.dataset_pretrained.get_filtered_dataset(
+                    pretrained_subsample_idxs, label_type=label_type)
+
+                # Concat to train and validation
+                task_train_dataset.concat_dataset(
+                    pretrained_subsampled_dataset)
+                task_val_dataset.concat_dataset(pretrained_subsampled_dataset)
+
+            task_dataset_train_loader = torch.utils.data.DataLoader(
+                task_train_dataset, batch_size=train_batch_size,
+                shuffle=shuffle, num_workers=num_workers)
+            task_dataset_val_loader = torch.utils.data.DataLoader(
+                task_val_dataset, batch_size=train_batch_size, shuffle=shuffle,
+                num_workers=num_workers)
+
+        task_idxs_test = self.dataset_idxs[
+            self.num_samples_per_task * task_id:
+            self.num_samples_per_task * (task_id + 1)]
+        if self.dataset.label_type == 'golden_label':
+            label_type = 'golden_label'
+        else:
+            label_type = 'human'
+        # use golden model to test
+        task_dataset_test = self.dataset.get_filtered_dataset(
+            task_idxs_test, label_type=label_type)
+        task_dataset_test_loader = torch.utils.data.DataLoader(
+            task_dataset_test, batch_size=test_batch_size, shuffle=shuffle,
+            num_workers=num_workers)
+
+        dataloaders_dict = {'train': task_dataset_train_loader,
+                            'val': task_dataset_val_loader,
+                            'test': task_dataset_test_loader}
+
+        print("Task {}. Train data: {}, val data: {}, test data: {}, "
+              "Subsample {}.".format(
+                  task_id, len(task_train_dataset), len(task_val_dataset),
+                  len(task_dataset_test), subsample_rate))
         return dataloaders_dict
 
     def _get_dataloader(self,
@@ -346,6 +481,10 @@ class Camera(object):
                 subsample_rate, shuffle)
         elif isinstance(self.dataset, WaymoClassification):
             return self._get_waymo_dataloader(
+                task_id, train_batch_size, test_batch_size, num_workers,
+                subsample_rate, shuffle)
+        elif isinstance(self.dataset, Mp4VideoClassification):
+            return self._get_mp4_dataloader(
                 task_id, train_batch_size, test_batch_size, num_workers,
                 subsample_rate, shuffle)
 
@@ -423,13 +562,45 @@ class Camera(object):
             print("WARNING: Model init is blocking=True. This may cause training jobs to start before the clock timer starts.")
             ray.get(self.inference_model.ready.remote())
 
-    def set_current_task(self,
-                         new_current_task: int):
+    def set_current_task(self, new_current_task: int):
         '''
         Updates the current task for this camera. This method is called when a task is incremented.
         :return:
         '''
         self.current_task = new_current_task
+        # run golden model inference if the camera is using goden label
+        if self.dataset.label_type == 'golden_label' and self.golden_model_ckpt:
+            # prepare the dataloader here
+            if isinstance(self.dataset, CityscapesClassification) or isinstance(self.dataset, Mp4VideoClassification):
+                if self.current_task == 1:
+                    task_data_idxs = self.dataset_idxs[
+                        self.num_samples_per_task * (self.current_task - 1):
+                        self.num_samples_per_task * (self.current_task + 1)].values.copy()
+                else:
+                    task_data_idxs = self.dataset_idxs[
+                        self.num_samples_per_task * self.current_task:
+                        self.num_samples_per_task * (self.current_task + 1)].values.copy()
+            elif isinstance(self.dataset, WaymoClassification):
+                segments = self.dataset.samples['segment'].unique().tolist()
+                mask = self.dataset.samples['segment'] == segments[self.current_task - 1]
+                task_data_idxs = self.dataset.samples[mask]["idx"]
+
+            dataset = self.dataset.get_filtered_dataset(task_data_idxs)
+
+            loader = torch.utils.data.DataLoader(
+                dataset, batch_size=64, num_workers=8)
+            print("Generating golden labels")
+            golden_labels = generate_golden_model_labels(
+                loader, self.golden_model_ckpt)
+            mask = self.dataset.samples["idx"].isin(task_data_idxs)
+            if 'golden_label' not in self.dataset.samples.columns:
+                # doing this because missing values will be filled with NaN
+                # but NaN can only be treated as float causing the entire
+                # column to be float
+                self.dataset.samples['golden_label'] = -1
+            self.dataset.samples.loc[mask, 'golden_label'] = golden_labels
+            golden_accuracy = (self.dataset.samples.loc[mask, 'golden_label'] == self.dataset.samples.loc[mask, 'class']).sum()/len(golden_labels)
+            print("Accuracy of golden model for task {}: {}".format(self.current_task, golden_accuracy))
 
     def run_retraining(self,
                        hyperparameters: dict,
@@ -453,7 +624,21 @@ class Camera(object):
                                                         hyperparameters,
                                                         validation_freq,
                                                         profiling_mode)
-        return task
+        metadata = {}
+        for k, dataloader in dataloaders_dict.items():
+            metadata[k] = {}
+            metadata[k]['class_distribution'] = dataloader.dataset.get_class_dist()
+            metadata[k]['time_of_day'] = dataloader.dataset.get_time_of_day()
+            metadata[k]['weather'] = dataloader.dataset.get_weather()
+
+        task = self.training_model.retrain_model.remote(
+            dataloaders_dict['train'], dataloaders_dict['val'],
+            dataloaders_dict['test'], hyperparameters,
+            validation_freq, profiling_mode)
+        # TODO: cache retrained models
+        model_save_path = os.path.join(model_save_dir, "config{}_task{}.pth".format(hyperparameters['id'], self.current_task))
+        self.training_model.save_model.remote(model_save_path)
+        return task, metadata
 
     def update_inference_from_retrained_model(self,
                                               path: str = None):
@@ -480,3 +665,26 @@ class Camera(object):
 
     def inference_memory_footprint(self):
         return INFERENCE_MEMORY_FOOTPRINT
+
+
+def generate_golden_model_labels(dataloader, checkpoint_path,  # , device,
+                                 golden_model_name='resnext101_elastic'):
+    """Use golden model to produce retraining labels.
+    Args
+        dataloader: pytorch dataloader of the training data.
+        checkpoint_path: path to golden model weights.
+        device: GPU id.
+        golden_model_name: name of golden model. Default: resnext101_elasticA.
+    """
+    if isinstance(dataloader.dataset, WaymoClassification):
+        dataset_name = 'waymo'
+    elif isinstance(dataloader.dataset, CityscapesClassification):
+        dataset_name = 'cityscapes'
+    elif isinstance(dataloader.dataset, Mp4VideoClassification):
+        dataset_name = 'mp4'
+    else:
+        raise NotImplementedError("Uknown dataset class.")
+    model = GoldenModel(golden_model_name, checkpoint_path, dataset_name)
+    _, golden_labels = model.infer(dataloader)
+    torch.cuda.empty_cache()
+    return golden_labels

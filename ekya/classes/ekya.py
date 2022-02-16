@@ -143,6 +143,7 @@ class Ekya(object):
             self.profiling_profiling_results = nested_dict()
             self.profiling_subprofiling_test_results = nested_dict()
             self.profiling_overall_results = nested_dict()
+            self.profiling_metadata = nested_dict()
 
 
         # Launch logger actor
@@ -307,6 +308,7 @@ class Ekya(object):
     def accumulate_profiles(self, camera_id, task_id):
         retraining_task = self.retraining_tasks[camera_id]
         best_val_acc, profile, subprofile_test_results, profile_preretrain_test_acc, profile_test_acc, misc_return = ray.get(retraining_task)
+        metadata = self.retraining_metadata[camera_id]
         hyps = self.current_hyperparameters[camera_id]
         hparam_id = str(hyps['id'])
 
@@ -315,6 +317,7 @@ class Ekya(object):
         self.profiling_overall_results[camera_id][hparam_id]["val_acc"][task_id] = best_val_acc
         self.profiling_overall_results[camera_id][hparam_id]["test_acc"][task_id] = profile_test_acc
         self.profiling_overall_results[camera_id][hparam_id]["preretrain_test_acc"][task_id] = profile_preretrain_test_acc
+        self.profiling_metadata[camera_id][hparam_id][task_id] = metadata
 
     def flush_profiles(self):
         for c in self.cameras:
@@ -337,6 +340,11 @@ class Ekya(object):
                 hyp_subprofile_path = os.path.join(results_path, "{}_subprofile_test.json".format(hparam_idx))
                 with open(hyp_subprofile_path, 'w') as fp:
                     json.dump(self.profiling_subprofiling_test_results[camera_id][hparam_idx], fp)
+                # Write metadata
+                hyp_metadata_path = os.path.join(
+                    results_path, "{}_metadata.json".format(hparam_idx))
+                with open(hyp_metadata_path, 'w') as fp:
+                    json.dump(self.profiling_metadata[camera_id][hparam_idx], fp)
 
     def retraining_completion_callback(self, camera_id):
         if self.profiling_mode:
