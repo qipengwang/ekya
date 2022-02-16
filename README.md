@@ -37,11 +37,11 @@ With this release of Ekya, you can:
 	* [Running Ekya with Urban Traffic Dataset](#running-ekya-with-urban-traffic-dataset)
 		* [Prepare MP4(Bellevue) Dataset](#prepare-mp4bellevue-dataset)
 	* [Running Ekya with Urban Building Dataset](#running-ekya-with-urban-building-dataset)
-	* [Prepare MP4(Vegas) Dataset](#prepare-mp4vegas-dataset)
+		* [Prepare MP4(Vegas) Dataset](#prepare-mp4vegas-dataset)
 * [Strawman Models](#strawman-models)
 * [Extending Ekya](#extending-ekya)
 	* [Adding Custom Schedulers to Ekya](#adding-custom-schedulers-to-ekya)
-	* [Adding Custom Models to Ekya](#adding-custom-models-to-ekya)
+	* [Adding Custom Learning Techniques to Ekya](#adding-custom-learning-techniques-to-ekya)
 * [Frequently Asked Questions](#frequently-asked-questions)
 * [Ekya driver script usage guide](#ekya-driver-script-usage-guide)
 * [Citing Ekya](#citing-ekya)
@@ -167,7 +167,7 @@ into ```ekya/object_detection_model/```.
 ```
 ./ekya/datasets/scripts/cityscapes_generate_samplelists.sh
 ```
-You will need to configure the `DATASET_PATH` ` to point to your dataset.
+You will need to configure the `DATASET_PATH` to point to your dataset.
 
 ### Running Ekya
 3. Download the pretrained models for citysapes from [here](https://drive.google.com/drive/folders/15qE5IBFAkKuiDeUcV8xQPvpKXq1Zk6yT?usp=sharing) and extract them to a directory.
@@ -214,7 +214,7 @@ python driver_prepare_mp4.py \
 
 ## Running Ekya with Urban Building Dataset
 TODO
-## Prepare MP4(Vegas) Dataset
+### Prepare MP4(Vegas) Dataset
 
 ```
 cd ekya/ekya/experiment_drivers
@@ -265,7 +265,8 @@ class BaseScheduler(object):
         pass
 ```
 
-## Adding Custom Models to Ekya
+## Adding Custom Learning Techniques to Ekya
+
 
 # Frequently Asked Questions
 
