@@ -41,7 +41,8 @@ Download links:
 * [Camera 4 Videos](https://github.com/ekya-project/ekya)
 * [Camera 5 Videos](https://github.com/ekya-project/ekya) 
 
-## TODO: Urban Building Dataset
+## Urban Building Dataset
+* [Download Link](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
 
 
 # Running Ekya
@@ -57,7 +58,7 @@ git checkout cf53b35
 2. To build Ray, follow the [build instructions](https://docs.ray.io/en/master/development.html#building-ray-on-linux-macos-full) from the Ray repository.
 ```
 sudo apt-get update
-sudo apt-get install -y build-essential curl unzip psmisc
+sudo apt-get install -y build-essential curl unzip psmisc ffmpeg
 
 # Install Cython
 pip install cython==0.29.0 pytest
@@ -143,25 +144,63 @@ To reproduce the results, you will need to run the driver script from step 5 for
 
 ## Running Ekya with the Waymo Dataset
 
-### Download Original Waymo Dataset
+<!-- ### Download Original Waymo Dataset -->
+<!--  -->
+<!-- 1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/). -->
+<!-- 2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release". -->
+<!-- 3. Click "tar files". -->
 
-1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
-2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
-3. Click "tar files".
+### Download pretrained models
+1. Download ```waymo_pretrain_model.tar``` from
+   [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb)
+   into ```pretrained_models```.
+2. Perform the following commands
+    ```bash 
+    cd ekya/pretrained_models
+    tar -xvf waymo_pretrain_model.tar
+    mv waymo_pretrain_model waymo
+    rm waymo_pretrain_model.tar
+    ```
 
-### Download Processed Waymo Dataset
-4. Download from [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb) into ```ekya/dataset/waymo```.
+### Download Preprocessed Waymo Dataset
+1. Download ```waymo_classification_images.tar``` from
+   [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb)
+   into ```dataset/waymo```.
+2. Perform the following commands
+    ```bash 
+    cd dataset/waymo
+    tar -xvf waymo_classification_images.tar
+    rm waymo_classification_images.tar
+    ```
+### Regenerate processed Waymo Dataset from Original Waymo Dataset
+1. Instead of downloading ```waymo_classification_images.tar```, download
+   ```waymo[0-7].tar``` 
+   [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb)
+   into ```dataset/waymo```.
+2. Then perform the following commands. TODO: a script to regenerate
 
-### Running Ekya
+### Running Waymo
 TODO: Add instructions
 
 
 ## Running Ekya with Urban Traffic Dataset
-TODO
-### Prepare MP4(Bellevue) Dataset
 
-```
-cd ekya/ekya/experiment_drivers
+### Download Pretrained Models
+1. Download ```bellevue_pretrained_models.tar.gz``` from
+[here](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
+into ```pretrained_models```.
+2. Perform the following commands. 
+    ```bash 
+    cd pretrained_models
+    tar -xvf bellevue_pretrained_models.tar.gz
+    mv bellevue_pretrained_models bellevue
+    rm bellevue_pretrained_models.tar.gz
+    ```
+
+### Prepare Urban Traffic Dataset from mp4 Videos
+
+```bash
+cd ekya/experiment_drivers
 python driver_prepare_mp4.py \
     --dataset bellevue \
     --dataset-root ../../dataset \
@@ -169,22 +208,74 @@ python driver_prepare_mp4.py \
     --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
 ```
 
+### Running Urban Traffic Dataset
+
+```bash
+cd ekya/experiment_drivers
+bash driver_profiling_mp4_golden_vegas.sh
+```
+
 
 ## Running Ekya with Urban Building Dataset
-TODO
-## Prepare MP4(Vegas) Dataset
 
-```
-cd ekya/ekya/experiment_drivers
-python driver_prepare_mp4.py \
-    --dataset vegas \
-    --dataset-root ../../dataset \
-    --device 0 \
-    --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
+### Download Pretrained Models
+
+1. Download ```vegas_pretrained_models.tar.gz``` from
+[here](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
+into ```pretrained_models```.
+2. Perform the following commands. 
+    ```bash 
+    cd pretrained_models
+    tar -xvf vegas_pretrained_models.tar.gz
+    mv vegas_pretrained_models vegas
+    rm vegas_pretrained_models.tar.gz
+    ```
+
+### Download Preprocessed Urban Building Dataset
+1. Download ```las_vegas_24h_[0-3].tar.gz``` and
+   ```vegas_sample_lists.tar.gz``` from
+   [here](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
+   into ```datasets/vegas```.
+
+2. Decompress
+    ```bash
+    cd datasets/vegas
+    for i in {0..3}; do tar -xf las_vegas_24h_$i.tar.gz; done
+    tar -xf vegas_sample_lists.tar.gz
+    rm *.tar.gz
+    ```
+
+### Prepare Urban Building Dataset from mp4 Videos
+1. Download ```las_vegas_24h_[0-3].mp4``` 
+   [here](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
+   into ```datasets/vegas```.
+2. Run the following commands.
+    ```bash
+    cd ekya/experiment_drivers
+    python driver_prepare_mp4.py \
+        --dataset vegas \
+        --dataset-root ../../dataset \
+        --device 0 \
+        --model-path ../../object_detection_model/faster_rcnn_resnet101_coco_2018_01_28
+    ```
+
+### Running Urban Building Dataset
+```bash
+cd ekya/experiment_drivers
+bash driver_profiling_mp4_golden_bellevue.sh
 ```
 
 # Strawman Models
-TODO: point to scripts.
+```bash
+# assume waymo dataset is ready
+cd ekya/model_cache
+# to train models used in the model cache experiments
+bash driver_model_cache.sh
+# to do the inference
+bash driver.sh
+# to plot figures
+python plot.py
+```
 
 # Extending Ekya
 Ekya can be easily extended in two dimensions - adding custom schedulers and adding new continuous learning techniques.
@@ -192,7 +283,7 @@ Ekya can be easily extended in two dimensions - adding custom schedulers and add
 ### Adding Custom Schedulers to Ekya
 Ekya schedulers are implemented in `ekya/scheduelers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
 TODO. fix.
-```
+```python
 class BaseScheduler(object):
     def __init__(self):
         pass
