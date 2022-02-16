@@ -41,8 +41,10 @@ Download links:
 * [Camera 4 Videos](https://github.com/ekya-project/ekya)
 * [Camera 5 Videos](https://github.com/ekya-project/ekya) 
 
+
 ## Urban Building Dataset
 * [Download Link](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
+
 
 
 # Running Ekya
@@ -144,6 +146,7 @@ To reproduce the results, you will need to run the driver script from step 5 for
 
 ## Running Ekya with the Waymo Dataset
 
+
 <!-- ### Download Original Waymo Dataset -->
 <!--  -->
 <!-- 1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/). -->
@@ -201,6 +204,7 @@ into ```pretrained_models```.
 
 ```bash
 cd ekya/experiment_drivers
+
 python driver_prepare_mp4.py \
     --dataset bellevue \
     --dataset-root ../../dataset \
@@ -277,12 +281,14 @@ bash driver.sh
 python plot.py
 ```
 
+
 # Extending Ekya
 Ekya can be easily extended in two dimensions - adding custom schedulers and adding new continuous learning techniques.
 
 ### Adding Custom Schedulers to Ekya
 Ekya schedulers are implemented in `ekya/scheduelers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
 TODO. fix.
+
 ```python
 class BaseScheduler(object):
     def __init__(self):
@@ -474,5 +480,4 @@ optional arguments:
   -mir MAX_INFERENCE_RESOURCES, --max-inference-resources MAX_INFERENCE_RESOURCES
                         Maximum resources required for inference. Acts as a
                         ceiling for the inference scaling function.
-
 ```
