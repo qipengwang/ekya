@@ -66,4 +66,11 @@ def get_pretrained_model_format(dataset_name,
         path_format = "pretrained_cityscapes_fftmunster_{}_{}x2.pt"
     elif dataset_name == 'waymo':
         path_format = "waymo_{}_{}.pth"
+    elif dataset_name == 'vegas':
+        # use cityscapes pretrained models for now
+        path_format = "pretrained_mp4_las_vegas_{}_{}x2.pt"
+    elif dataset_name == 'bellevue':
+        path_format = "pretrained_bellevue_Bellevue_116th_NE12th__2017-09-10_20-09-12_0.5fps_Bellevue_116th_NE12th__2017-09-10_21-08-54_0.5fps_Bellevue_116th_NE12th__2017-09-10_23-08-29_0.5fps_{}_{}x2.pt"
+    else:
+        raise NotImplementedError('Unknown dataset.')
     return os.path.join(pretrained_model_dir, path_format)
