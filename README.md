@@ -57,7 +57,7 @@ The samplelists for each video clip, containing the objects detected and their l
 Each samplelist is a CSV with 6 columns: `["idx", "class", "x0", "y0", "x1", "y1"]`. Each column is described below:
 
 * `idx`: row index
-* `class`: Object class
+* `class`: Object class - mapping can be found in `/ekya/datasets/coco_classes.txt`.
 * `x0`: X coordinates of top left of bounding box
 * `y0`: Y coordinates of top left of bounding box
 * `x1`: X coordinates of bottom right of bounding box
