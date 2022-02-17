@@ -221,7 +221,10 @@ To plot the results, you will need to run the driver script from step 5 for diff
 2. Then perform the following commands. TODO: a script to regenerate
 
 ### Running Waymo
-TODO: Add instructions
+```bash
+cd ekya/experiment_drivers
+bash driver_profiling_waymo_golden.sh
+```
 
 
 ## Running Ekya with Urban Traffic Dataset
