@@ -218,7 +218,11 @@ To plot the results, you will need to run the driver script from step 5 for diff
    ```waymo[0-7].tar``` 
    [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb)
    into ```dataset/waymo```.
-2. Then perform the following commands. TODO: a script to regenerate
+2. Then perform the following commands.
+    ```bash
+    cd ./ekya/datasets/scripts
+    python waymo_generate_sample_lists.py
+    ```
 
 ### Running Waymo
 ```bash
