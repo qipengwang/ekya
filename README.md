@@ -4,7 +4,7 @@ Given a set of video streams and pre-trained models, Ekya can continuously fine-
 
 At the core of Ekya is the Thief Scheduler, which operates by stealing small resource chunks from a selected job and reallocating them to a more promising job. The thief scheduler obtains information about the "promise" of a job through the micro-profiling mechanism, which runs each retraining job for a short duration to estimate it's future performance.
 
-This architecture diagram highlights the flow of data in Ekya. More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-paper74.pdf).
+This architecture diagram highlights the flow of data in Ekya. More details can be found in our NSDI 2022 paper available [here](https://nsdi22spring.usenix.hotcrp.com/doc/nsdi22spring-final74.pdf).
 
 <p align="center">
     <img src="https://i.imgur.com/ng1jLsS.png" width="500">
@@ -180,9 +180,6 @@ This script will run all schedulers, including `thief`, `fair` and `noretrain`.
 
 5. The results will be written in a timestamped directory at `results/ekya_expts/cityscapes/`.
 
-### Plotting Results
-To plot the results, you will need to run the driver script from step 5 for different `NUM_GPUS` counts. Once you have done so, collect all the result directories. You can then use the `/viz/driver_viz_multicity.ipynb` notebook to plot your results.
-
 ## Running Ekya with the Waymo Dataset
 
 <!-- ### Download Original Waymo Dataset -->
@@ -306,7 +303,30 @@ cd ekya/experiment_drivers
 bash driver_profiling_mp4_golden_bellevue.sh
 ```
 
-# Strawman Models
+
+## Plotting Results
+To plot the results from the above runs,have done so, collect all the result directories. You can then use the `/viz/driver_viz_multicity_varyingcities.ipynb` notebook to plot your results. You will need to set the `BASE_DIR` to the root of your Ekya log directory. 
+
+For example, if you run the cityscapes driver script with the default values (defaults are set for a shorter run), you should be able to produce the following figure:
+  
+<p align="center">
+    <img src="https://i.imgur.com/ilwGMs8.png" width="300">
+</p>
+
+To create figures with varying GPU counts, you will need to run the driver script for different `NUM_GPUS` counts and collate them into one directory before using `/viz/driver_viz_multicity_varyingcities.ipynb`. 
+
+
+# Comparing against other baselines
+
+One of the baselines explored in our NSDI paper is the comparison against a continous model selection strategy.
+This baseline strategy uses pre-cached models generated under different scenarios (e.g. weather, time of day, class distributions) and loads models according to the current scenario. As we demonstrate in the paper, Ekya outperforms this strategy:
+
+<p align="center">
+    <img src="https://i.imgur.com/49pxG3i.png" width="400">
+</p>
+
+To run these baselines, follow these steps:
+
 ```bash
 # assume waymo dataset is ready
 cd ekya/model_cache
