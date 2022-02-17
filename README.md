@@ -44,6 +44,7 @@ With this release of Ekya, you can:
 	* [Adding Custom Models to Ekya](#adding-custom-models-to-ekya)
 * [Frequently Asked Questions](#frequently-asked-questions)
 * [Ekya driver script usage guide](#ekya-driver-script-usage-guide)
+* [Citing Ekya](#citing-ekya)
 [](/mdtoc)
 
 
@@ -515,4 +516,19 @@ optional arguments:
   -mir MAX_INFERENCE_RESOURCES, --max-inference-resources MAX_INFERENCE_RESOURCES
                         Maximum resources required for inference. Acts as a
                         ceiling for the inference scaling function.
+
+```
+
+# Citing Ekya
+If you use Ekya or the new datasets in your research, please cite the Ekya NSDI 2022 paper:
+```
+@inproceedings {276952,
+title = {Ekya: Continuous Learning of Video Analytics Models on Edge Compute Servers},
+booktitle = {19th USENIX Symposium on Networked Systems Design and Implementation (NSDI 22)},
+year = {2022},
+address = {Renton, WA},
+url = {https://www.usenix.org/conference/nsdi22/presentation/bhardwaj},
+publisher = {USENIX Association},
+month = apr,
+}
 ```
