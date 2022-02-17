@@ -5,7 +5,6 @@ import ray
 from ekya.models.icarl_model import ICaRLModel
 from ekya.utils.loggeractor import Logger
 
-#TODO - This example is incompelete
 from ekya.utils.monitoractor import Monitor
 
 def get_model(idx, batch_size=None, convnet=None, subsample_dataset=None):

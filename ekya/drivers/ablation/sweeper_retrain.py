@@ -5,7 +5,6 @@ import ray
 from ekya.models.icarl_model import ICaRLModel
 from ekya.utils.loggeractor import Logger, BaseLogger
 
-#TODO - This example is incompelete
 from ekya.utils.monitoractor import Monitor
 
 CP_PATH = "/tmp/icarl_{}_0_10.pt"

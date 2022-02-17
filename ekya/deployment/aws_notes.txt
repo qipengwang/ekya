@@ -36,5 +36,3 @@ export CUDA_MPS_LOG_DIRECTORY=/tmp/nvidia-log
 nvidia-cuda-mps-control -d
 
 echo quit | nvidia-cuda-mps-control
-
-3,17,0.7 fails on 6 cities 2/1 gpus

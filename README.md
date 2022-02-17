@@ -49,7 +49,7 @@ With this release of Ekya, you can:
 
 
 # New Datasets
-As a part of this repository, we release two new video datasets - Urban Traffic and Urban Building. In addition, Ekya can also run on the Cityscapes and Waymo datasets (see instructions below).
+As a part of this repository, we present two new video datasets - Urban Traffic and Urban Building. In addition, Ekya can also run on the Cityscapes and Waymo datasets (see instructions below).
 
 We have labelled both Urban Traffic and Urban Building datasets using our golden model (ResNeXT-101 trained on MS COCO). These labels are stored in files called samplelists. 
 The samplelists for each video clip, containing the objects detected and their labels can be found in the `samplelists` directory in the dataset folder. 

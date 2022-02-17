@@ -87,8 +87,6 @@ class Camera(object):
         else:
             print("[Camera] No scaling function provided. Using no scaling.")
             self.inference_scaling_function = lambda x: 1   # No scaling if inference profile is not provided.
-        # TODO: Add support for using pretrained samples.
-        # TODO: Add support for setting hyperparameters from the scheduler
 
     @staticmethod
     def get_infer_profile(max_inference_resources=1,
@@ -124,7 +122,6 @@ class Camera(object):
             task_data_idxs = self.dataset_idxs[
                 0:self.num_samples_per_task * task_id].values.copy()
             # print(task_data_idxs)
-            # TODO: Uncomment shuffle
             # random.shuffle(task_data_idxs)
 
             # Pick at least two samples.
@@ -139,7 +136,6 @@ class Camera(object):
                 len(task_data_subsampled_idxs) - 1)
             task_data_idxs_train = task_data_subsampled_idxs[:train_end_idx]
             # Validation: all samples except training samples
-            # TODO(romilb): Shouldnt this be from task_data_subsampled_idxs?
             task_data_idxs_val = [x for x in task_data_idxs if x not in task_data_idxs_train]
 
             # task_data_idxs_train = task_data_idxs[:int(self.train_split * len(task_data_idxs))]
@@ -216,7 +212,6 @@ class Camera(object):
         # task_dataset_test = dataset.get_filtered_dataset(latter_idxs)
 
         # test
-        # TODO:
         # task_dataset_test = self.dataset.get_filtered_dataset(task_idxs_test)
         # test_loaders[task_id] = torch.utils.data.DataLoader(
         #     task_dataset_test, batch_size=test_batch_size, shuffle=shuffle,
