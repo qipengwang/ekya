@@ -10,7 +10,44 @@ This architecture diagram highlights the flow of data in Ekya. More details can 
     <img src="https://i.imgur.com/ng1jLsS.png" width="500">
 </p>
 
-# Datasets
+With this release of Ekya, you can: 
+* :white_check_mark: **Code** - Run Ekya on four supported datasets (Cityscapes, Waymo, UrbanTraffic, UrbanBuilding), or your own custom MP4 files (see [Running Ekya](#running-ekya)). 
+* :white_check_mark: **Datasets** - Use our newly released UrbanTraffic and UrbanBuilding datasets for your own research (see [New Datasets](#new-datasets)).
+* :white_check_mark: **Extend Ekya** - Build upon Ekya to build and prototype new scheduling algorithms and continuous learning techniques (see [Extending Ekya](#extending-ekya)). 
+
+[](mdtoc)
+# Table of Contents
+
+* [New Datasets](#new-datasets)
+	* [Urban Traffic Dataset](#urban-traffic-dataset)
+	* [Urban Building Dataset](#urban-building-dataset)
+* [Running Ekya](#running-ekya)
+	* [Installation](#installation)
+	* [Preparing Models](#preparing-models)
+		* [Golden Model](#golden-model)
+		* [Object Detection Model](#object-detection-model)
+	* [Running Ekya with Cityscapes Dataset](#running-ekya-with-cityscapes-dataset)
+		* [Preprocessing the Cityscapes Dataset](#preprocessing-the-cityscapes-dataset)
+		* [Running Ekya](#running-ekya-1)
+		* [Plotting Results](#plotting-results)
+	* [Running Ekya with the Waymo Dataset](#running-ekya-with-the-waymo-dataset)
+		* [Download Original Waymo Dataset](#download-original-waymo-dataset)
+		* [Download Processed Waymo Dataset](#download-processed-waymo-dataset)
+		* [Running Ekya](#running-ekya-2)
+	* [Running Ekya with Urban Traffic Dataset](#running-ekya-with-urban-traffic-dataset)
+		* [Prepare MP4(Bellevue) Dataset](#prepare-mp4bellevue-dataset)
+	* [Running Ekya with Urban Building Dataset](#running-ekya-with-urban-building-dataset)
+	* [Prepare MP4(Vegas) Dataset](#prepare-mp4vegas-dataset)
+* [Strawman Models](#strawman-models)
+* [Extending Ekya](#extending-ekya)
+	* [Adding Custom Schedulers to Ekya](#adding-custom-schedulers-to-ekya)
+	* [Adding Custom Models to Ekya](#adding-custom-models-to-ekya)
+* [Frequently Asked Questions](#frequently-asked-questions)
+* [Ekya driver script usage guide](#ekya-driver-script-usage-guide)
+[](/mdtoc)
+
+
+# New Datasets
 As a part of this repository, we release two new video datasets - Urban Traffic and Urban Building. In addition, Ekya can also run on the Cityscapes and Waymo datasets (see instructions below).
 
 We have labelled both Urban Traffic and Urban Building datasets using our golden model (ResNeXT-101 trained on MS COCO). These labels are stored in files called samplelists. 
@@ -32,7 +69,7 @@ Origin for the image is at the top right of the video frame.
     <img src="https://i.imgur.com/tV4M1oZ.png" width="500">
 </p>
 
-This dataset contains 62GB of traffic videos recorded from five pole mounted fish-eye cameras in the city of Bellevue, WA. Each of the five cameras has video clips of lengths upto one hour.
+This dataset contains 62GB of traffic videos recorded from five pole mounted fish-eye cameras in the city of Bellevue, WA. Each video stream is recorded at 1280x720@30fps, for a total of 101 hour of video across all cameras. 
 
 Download links:
 * [Camera 1 Videos](https://github.com/ekya-project/ekya)
@@ -41,11 +78,14 @@ Download links:
 * [Camera 4 Videos](https://github.com/ekya-project/ekya)
 * [Camera 5 Videos](https://github.com/ekya-project/ekya) 
 
-
 ## Urban Building Dataset
-* [Download Link](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG)
+<p align="center">
+    <img src="https://i.imgur.com/eMK2C9f.jpg" width="500">
+</p>
 
+This dataset contains 24 hours of video recorded from a PTZ public camera with a non-stationary view in Las Vegas. The video is recorded at 1920x1080@0.2fps. Along with the video stream, we provide the labels in the samplelist format described above.
 
+The dataset, object labels and cropped images of objects can be [downloaded here](https://drive.google.com/drive/folders/1wuAVAQQ4rfhg7rIsFIYB2IG32y0r3AYG?usp=sharing). 
 
 # Running Ekya
 ## Installation
@@ -128,8 +168,6 @@ into ```ekya/object_detection_model/```.
 ```
 You will need to configure the `DATASET_PATH` ` to point to your dataset.
 
-TODO: Fix the scripts    
-
 ### Running Ekya
 3. Download the pretrained models for citysapes from [here](https://drive.google.com/drive/folders/15qE5IBFAkKuiDeUcV8xQPvpKXq1Zk6yT?usp=sharing) and extract them to a directory.
 4. Run the multicity training script provided with Ekya.
@@ -141,8 +179,8 @@ This script will run all schedulers, including `thief`, `fair` and `noretrain`.
 
 5. The results will be written in a timestamped directory at `results/ekya_expts/cityscapes/`.
 
-### Plotting results
-To reproduce the results, you will need to run the driver script from step 5 for different `NUM_GPUS` counts. Once you have done so, collect all the result directories. You can then use the `/viz/driver_viz_multicity.ipynb` notebook to plot your results.
+### Plotting Results
+To plot the results, you will need to run the driver script from step 5 for different `NUM_GPUS` counts. Once you have done so, collect all the result directories. You can then use the `/viz/driver_viz_multicity.ipynb` notebook to plot your results.
 
 ## Running Ekya with the Waymo Dataset
 
@@ -285,15 +323,12 @@ python plot.py
 # Extending Ekya
 Ekya can be easily extended in two dimensions - adding custom schedulers and adding new continuous learning techniques.
 
-### Adding Custom Schedulers to Ekya
+## Adding Custom Schedulers to Ekya
 Ekya schedulers are implemented in `ekya/scheduelers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
-TODO. fix.
 
+The `BaseScheduler` class implements two key methods - `reallocation_callback` and `get_inference_schedule`. Their method signature and usage is described below.
 ```python
 class BaseScheduler(object):
-    def __init__(self):
-        pass
-
     def reallocation_callback(self,
                               completed_camera_name: str,
                               inference_resource_weights: dict,
@@ -305,7 +340,7 @@ class BaseScheduler(object):
         :param completed_camera_name: str, name of the job completed
         :param inference_resource_weights: the current inference resource allocation
         :param training_resources_weights: the current training resource allocation
-        :return: new_inference_resource_weights, new_training_resources_weights
+        :return: new_inference_resource_weights, new_training_resources_weights, two dictionaries mapping resource weights for inference and training jobs.
         '''
         pass
 
@@ -317,14 +352,14 @@ class BaseScheduler(object):
         used before the get_schedule actual schedule is obtained.
         :param cameras: list of cameras
         :param resources: total resources in the system to be split across tasks
-        :return: inference resource weights, hyperparameters
+        :return: inference resource weights, hyperparameters to use inference.
         '''
         pass
 ```
 
-### Adding Custom Models to Ekya
+## Adding Custom Models to Ekya
 
-## Frequently Asked Questions
+# Frequently Asked Questions
 
 1. When installing ray with `pip install -e . --verbose` and encountering the
    error `"[ray] [bazel] build failure, error --experimental_ui_deduplicate
@@ -338,7 +373,7 @@ class BaseScheduler(object):
     and compile ray useing `bazel-3.2.0`.
 
 
-## Ekya driver script usage guide
+# Ekya driver script usage guide
 ```
 usage: Ekya  [-h] [-ld LOG_DIR] [-retp RETRAINING_PERIOD]
                     [-infc INFERENCE_CHUNKS] [-numgpus NUM_GPUS]
