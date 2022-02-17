@@ -5,7 +5,7 @@ set -e
 
 DATASET_NAME=vegas
 DATASET_PATH=../../dataset/${DATASET_NAME}
-MODEL_PATH=${DATASET_PATH}/pretrained_models
+MODEL_PATH=../../pretrained_models/${DATASET_NAME}
 GOLDEN_MODEL_PATH=../../golden_model/coco_resnext101_elastic.pth.tar
 RESULTS_ROOT=../../results
 HYPS_PATH='profiling/hyp_map_all.json'
@@ -47,6 +47,7 @@ for HPARAM_ID in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17; do
                  --profile-write-path ${RESULTS_ROOT}/${DATASET_NAME}_outputs/human_label_profiles_sampled_${START_TASK}_${TERMINATION_TASK}/ \
                  --golden-model-ckpt-path ${GOLDEN_MODEL_PATH} \
                  --use-data-cache \
-                 --checkpoint-path ${RESULTS_ROOT}/${DATASET_NAME}_outputs/human_label_profiles_sampled_${START_TASK}_${TERMINATION_TASK}/
+                 --checkpoint-path ${RESULTS_ROOT}/${DATASET_NAME}_outputs/human_label_profiles_sampled_${START_TASK}_${TERMINATION_TASK}/ \
+                 --gpu-memory 4
   done
 done
