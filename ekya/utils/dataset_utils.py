@@ -36,7 +36,7 @@ def get_dataset(name: str) -> [VisionDataset, dict]:
         default_args = {"trsf": trsf,
                         "use_cache": True,
                         "num_classes": 4}
-    elif name == 'mp4':
+    elif name == 'vegas' or name == 'bellevue':
         from ekya.datasets.Mp4VideoClassification import Mp4VideoClassification
         trsf = transforms.Compose([transforms.ToTensor(),
                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],

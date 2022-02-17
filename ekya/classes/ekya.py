@@ -218,7 +218,8 @@ class Ekya(object):
                     pretrained_model_path = get_pretrained_model_format(camera.dataset_name, self.pretrained_model_dir).format(
                                                                   hyperparameters[camera.id]["model_name"],
                                                                   hyperparameters[camera.id]["num_hidden"])
-                    self.retraining_tasks[camera.id] = camera.run_retraining(hyperparameters[camera.id],
+                    (self.retraining_tasks[camera.id],
+                     self.retraining_metadata[camera.id]) = camera.run_retraining(hyperparameters[camera.id],
                                                                          training_resource_weights[camera.id],
                                                                          this_training_ray_demand,
                                                                          dataloaders_dict={},
@@ -251,6 +252,7 @@ class Ekya(object):
 
         self.inference_tasks = {}
         self.retraining_tasks = {}
+        self.retraining_metadata = {}
         self.inference_resource_weights, self.training_resource_weights = {}, {}
 
         # Launch inference jobs as the clock starts ticking even before the scheduler is done

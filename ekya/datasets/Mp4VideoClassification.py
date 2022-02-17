@@ -233,6 +233,23 @@ class Mp4VideoClassification(VisionDataset):
         self.samples = pd.concat([self.samples, other_dataset.samples], axis=0)
         self.update_idxs()
 
+    def get_time_of_day(self):
+        """Return the majority of weather of all samples."""
+        return ""
+
+    def get_weather(self):
+        """Return the majority of weather of all samples."""
+        return ""
+
+    def get_class_dist(self):
+        """Return class distribution of all samples."""
+        class_cnt = 6
+        class_dist = []
+        for i in range(class_cnt):
+            mask = self.samples['class'] == i
+            class_dist.append(len(self.samples[mask]))
+        return class_dist
+
     @staticmethod
     def extract_frame_images(video_file, save_dir):
         if not os.path.exists(save_dir):

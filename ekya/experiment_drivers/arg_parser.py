@@ -21,7 +21,7 @@ def get_parser():
     parser.add_argument("-r", "--root", default=default_root, type=str,
                         help="Cityscapes dataset root.")
     parser.add_argument("--dataset-name", default="cityscapes", type=str,
-                        choices=['cityscapes', 'waymo', 'mp4'],
+                        choices=['cityscapes', 'waymo', 'vegas', 'bellevue'],
                         help="Name of the dataset supported.")
     parser.add_argument("-c", "--cities", default="aachen", type=str,
                         help="comma separated str of list of cities to create cameras. Num cameras = num of cities")

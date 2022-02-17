@@ -1,3 +1,4 @@
+import os
 import random
 from typing import List
 
@@ -609,7 +610,8 @@ class Camera(object):
                        dataloaders_dict: dict = {},
                        validation_freq: int = -1,
                        restore_path: str = "",
-                       profiling_mode: bool = False) -> ray.ObjectID:
+                       profiling_mode: bool = False,
+                       model_save_dir="") -> ray.ObjectID:
         print("Starting retraining for camera {}".format(self.id))
         self.update_training_model(hyperparameters, training_gpu_weight, ray_resource_demand, restore_path=restore_path, blocking=False)
         if not dataloaders_dict:
