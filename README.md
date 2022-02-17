@@ -377,7 +377,14 @@ class BaseScheduler(object):
 ```
 
 ## Adding Custom Learning Techniques to Ekya
+Currently Ekya uses simple gradient updates to update vision models for each camera running in the system.
+This repository also includes another incremental learning technique [ICaRL (CVPR 2017)](https://openaccess.thecvf.com/content_cvpr_2017/papers/Rebuffi_iCaRL_Incremental_Classifier_CVPR_2017_paper.pdf) using this [implementation](https://github.com/arthurdouillard/incremental_learning.pytorch).
 
+To add your own learning technique:
+
+0. Your model must extend `ekya.classes.MLModel` baseclass. 
+1. Add your model to `/ekya/classes`.
+2. In `/ekya/classes/model.py`, replace `MLModel` with your Model in `RayMLModel = ray.remote(num_gpus=0.01)(<model>)`
 
 # Frequently Asked Questions
 
