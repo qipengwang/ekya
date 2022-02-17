@@ -21,7 +21,7 @@ def get_parser():
     parser.add_argument("-r", "--root", default=default_root, type=str,
                         help="Cityscapes dataset root.")
     parser.add_argument("--dataset-name", default="cityscapes", type=str,
-                        choices=['cityscapes', 'waymo'],
+                        choices=['cityscapes', 'waymo', 'mp4'],
                         help="Name of the dataset supported.")
     parser.add_argument("-c", "--cities", default="aachen", type=str,
                         help="comma separated str of list of cities to create cameras. Num cameras = num of cities")
@@ -37,6 +37,10 @@ def get_parser():
                         help="Number of workers preprocessing the data.")
     parser.add_argument("-ts", "--train-split", default=0.8, type=float,
                         help="Train validation split. This float is the fraction of data used for training, rest goes to validation.")
+    parser.add_argument("--golden-label", action="store_true", default=False,
+                        help="Use golden model labels as ground truth if "
+                        "specified. Otherwise, use human label groundtruth. "
+                        "Default: False")
 
 
     # Training related:
@@ -72,6 +76,8 @@ def get_parser():
     #                     help="LR multiplied by it.")
     # parser.add_argument("-opt", "--optimizer", default="sgd", type=str,
     #                     help="Optimizer to use.")
+    parser.add_argument("--golden-model-ckpt-path", type=str, default="",
+                        help='Path from where to load the golden model weights.')
 
     # Scheduler related:
     parser.add_argument("-sched", "--scheduler", default="noretrain", type=str,
