@@ -185,7 +185,6 @@ To plot the results, you will need to run the driver script from step 5 for diff
 
 ## Running Ekya with the Waymo Dataset
 
-
 <!-- ### Download Original Waymo Dataset -->
 <!--  -->
 <!-- 1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/). -->
@@ -243,7 +242,6 @@ into ```pretrained_models```.
 
 ```bash
 cd ekya/experiment_drivers
-
 python driver_prepare_mp4.py \
     --dataset bellevue \
     --dataset-root ../../dataset \
@@ -319,7 +317,6 @@ bash driver.sh
 # to plot figures
 python plot.py
 ```
-
 
 # Extending Ekya
 Ekya can be easily extended in two dimensions - adding custom schedulers and adding new continuous learning techniques.
