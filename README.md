@@ -325,6 +325,7 @@ Ekya can be easily extended in two dimensions - adding custom schedulers and add
 Ekya schedulers are implemented in `ekya/scheduelers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
 
 The `BaseScheduler` class implements two key methods - `reallocation_callback` and `get_inference_schedule`. Their method signature and usage is described below.
+
 ```python
 class BaseScheduler(object):
     def reallocation_callback(self,
