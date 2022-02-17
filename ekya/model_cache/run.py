@@ -1,28 +1,18 @@
-"""Aim to test the model cache logic.
-
-Target Conference: NSDI 2021 Spring
-Goal: solve model reuse question from reviewers
-"""
+"""Aim to test the model cache logic."""
 import argparse
 import csv
-import glob
-import json
 import os
 import random
 
 import numpy as np
-import pandas as pd
 import torch
-from torch.utils.data import random_split
 from torchvision import transforms
 
-from ekya.classes.model import RayMLModel
-from ekya.datasets.CityscapesClassification import CityscapesClassification
-from ekya.datasets.Mp4VideoClassification import Mp4VideoClassification
+# from ekya.classes.model import RayMLModel
+# from ekya.datasets.CityscapesClassification import CityscapesClassification
+# from ekya.datasets.Mp4VideoClassification import Mp4VideoClassification
 from ekya.datasets.WaymoClassification import WaymoClassification
-from ekya.models.golden_model import GoldenModel
 from ekya.models.resnet import Resnet
-from ekya.utils.dataset_utils import get_dataset
 from ekya.utils.helpers import read_json_file, seed_all, write_json_file
 
 
@@ -185,42 +175,21 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Test model cache experiement script.")
     parser.add_argument("--dataset", type=str, required=True,
-                        choices=['cityscapes', 'waymo', 'mp4'],
-                        help='Dataset name.')
+                        choices=['waymo'], help='Dataset name.')
     parser.add_argument("--root", type=str, required=True, help='Dataset root')
     parser.add_argument("--camera_name", type=str, required=True,
                         help="A list of camera/city to be used.")
     parser.add_argument("--num_tasks", type=int, default=10,
                         help='Number of tasks/retrainining windows.')
-    # parser.add_argument("--num_tasks_to_train", type=int, default=3,
-    #                     help='Number of tasks/retrainining windows from start'
-    #                     ' to train the model.')
-    # parser.add_argument("--batch_size", type=int, default=16,
-    #                     help='Batch size.')
     parser.add_argument("--hyperparameter", type=int, default=5,
                         help='Hyperparameter id.')
-    parser.add_argument("--epochs", type=int, default=30,
-                        help='Training Epoch.')
-    # parser.add_argument("--learning_rate", type=float, default=0.001,
-    #                     help='Training Learning Rate.')
-    # parser.add_argument("--momentum", default=0.9, type=float,
-    #                     help="Momentum.")
-    #
-    # parser.add_argument("--last_layer_only", action='store_true',
-    #                     help='Retrain last layer only of if specified.')
-    # parser.add_argument("--model_name", type=str, required=True,
-    #                     choices=['resnet18', 'resnet50', 'resnet101',
-    #                              'resnet152'],
-    #                     help='Model name.')
-    # parser.add_argument("--num_hidden", type=int, default=64,
-    #                     help='Number of hidden neuron in the last layer.')
     parser.add_argument("--checkpoint_path", type=str, required=True,)
     parser.add_argument("--num_workers", type=int, default=8,
                         help='Number of workers.')
-    parser.add_argument("--no_train_model_path", type=str, required=True,
-                        help='model customized on other cameras')
     parser.add_argument("--hyp_map_path", type=str, required=True,
                         help='path to hyperparameter map.')
+    parser.add_argument("--save_path", type=str, required=True,
+                        help='path to results.')
 
     return parser.parse_args()
 
@@ -242,39 +211,33 @@ def main():
     hyp_map = read_json_file(args.hyp_map_path)
     dataset_name = args.dataset
     num_tasks = args.num_tasks
-    # num_tasks_to_train = args.num_tasks_to_train
     hyp_id = str(args.hyperparameter)
-    # print(hyp_id)
     num_classes = get_num_classes(dataset_name)
-    # num_epochs = args.epochs
-    save_path = args.checkpoint_path
+    chkpt_path = args.checkpoint_path
     root = args.root  # Dataset root
     sample_list_root = os.path.join(root, "sample_lists", "citywise")
     # sample_list_root = os.path.join(root, "sample_lists", "citywise_sorted")
     camera_name = args.camera_name
-    # no_train_model_path = args.no_train_model_path
-    # val_sample_names = args["lists_val"].split(',')
 
     # load the dataset
     trsf = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize(mean=[0.485, 0.456, 0.406],
                               std=[0.229, 0.224, 0.225])])
-    if dataset_name == 'cityscapes':
-        dataset = CityscapesClassification(
-            root, camera_name, sample_list_root, transform=trsf,
-            resize_res=224, use_cache=True, label_type='golden_label')
-    elif dataset_name == 'waymo':
+    # if dataset_name == 'cityscapes':
+    #     dataset = CityscapesClassification(
+    #         root, camera_name, sample_list_root, transform=trsf,
+    #         resize_res=224, use_cache=True, label_type='golden_label')
+    if dataset_name == 'waymo':
         dataset = WaymoClassification(
             root, camera_name, sample_list_root, transform=trsf,
             resize_res=224, use_cache=True, label_type='golden_label')
     else:
         raise NotImplementedError
-    # print(f'loaded {dataset_name} {camera_name}')
 
     # with open(os.path.join("results_golden_label", f'{camera_name}.csv'), 'w', 1) as f:
-    os.makedirs(os.path.join("tmp", camera_name), exist_ok=True)
-    with open(os.path.join("tmp", f'{camera_name}.csv'), 'w', 1) as f:
+    os.makedirs(os.path.join(args.save_path, camera_name), exist_ok=True)
+    with open(os.path.join(args.save_path, f'{camera_name}.csv'), 'w', 1) as f:
         csv_writer = csv.writer(f, lineterminator='\n')
         csv_writer.writerow(['task_id', 'cached_camera_name', 'hyp_id', 'cached_camera_task_id', 'test_acc'])
         for hyp_id in ['0', '1', '2', '3', '4', '5']:
@@ -283,8 +246,6 @@ def main():
                 num_hidden = hyp_map[hyp_id]["num_hidden"]
                 last_layer_only = hyp_map[hyp_id]["last_layer_only"]
                 model_name = hyp_map[hyp_id]["model_name"]
-                # lr = hyp_map[hyp_id]["learning_rate"]
-                # momentum = hyp_map[hyp_id]["momentum"]
                 batch_size = hyp_map[hyp_id]["batch_size"]
                 subsample = hyp_map[hyp_id]["subsample"]
 
@@ -293,7 +254,6 @@ def main():
                     'last_layer_only': last_layer_only,
                     'model_name': model_name
                 }
-                # print(task_id)
                 dataloaders_dict = get_waymo_dataloader(
                     dataset, num_tasks, task_id, batch_size, batch_size, 8, subsample,
                     False)
@@ -305,20 +265,18 @@ def main():
                     metadata[k]['weather'] = dataloader.dataset.get_weather()
                     if k == 'train' and hyp_id == '5':
                         dataloader.dataset.get_image_paths()
-                        # import sys
-                        # sys.exit()
                 tot_metadata[task_id] = metadata
-            # write_json_file(os.path.join("tmp", camera_name, f"{hyp_id}_metadata.json"), tot_metadata)
-                # test_loader = dataloaders_dict['test']
-                # for city in ['sf_000_009', 'sf_020_029', 'sf_030_039', 'sf_050_059', 'sf_060_069', 'sf_070_079', 'sf_080_089']:
-                #     for test_task_id in range(1, 10):
-                #         selected_model_path = os.path.join(
-                #             "/data2/zxxia/ekya/results/model_cache_exp/golden_label_profiles",
-                #             city, f"config{hyp_id}_task{test_task_id}.pth")
-                #         model = Resnet(num_classes, hyperparameters=hyperparams,
-                #                        restore_path=selected_model_path)
-                #         test_acc = model.infer(test_loader)
-                #         csv_writer.writerow([task_id, city, hyp_id, test_task_id, test_acc])
+                test_loader = dataloaders_dict['test']
+                for city in ['sf_000_009', 'sf_020_029', 'sf_030_039', 'sf_050_059', 'sf_060_069', 'sf_070_079', 'sf_080_089']:
+                    for test_task_id in range(1, 10):
+                        selected_model_path = os.path.join(
+                            chkpt_path, city,
+                            f"config{hyp_id}_task{test_task_id}.pth")
+                        model = Resnet(num_classes, hyperparameters=hyperparams,
+                                       restore_path=selected_model_path)
+                        test_acc = model.infer(test_loader)
+                        csv_writer.writerow([task_id, city, hyp_id, test_task_id, test_acc])
+            write_json_file(os.path.join(args.save_path, camera_name, f"{hyp_id}_metadata.json"), tot_metadata)
 
 
 if __name__ == '__main__':
