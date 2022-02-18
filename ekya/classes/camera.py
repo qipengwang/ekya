@@ -620,12 +620,6 @@ class Camera(object):
                                                     subsample_rate=hyperparameters["subsample"])
         if profiling_mode:
             validation_freq = int(hyperparameters["validation_freq"])
-        task = self.training_model.retrain_model.remote(dataloaders_dict['train'],
-                                                        dataloaders_dict['val'],
-                                                        dataloaders_dict['test'],
-                                                        hyperparameters,
-                                                        validation_freq,
-                                                        profiling_mode)
         metadata = {}
         for k, dataloader in dataloaders_dict.items():
             metadata[k] = {}
