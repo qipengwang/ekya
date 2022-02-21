@@ -48,6 +48,6 @@ for HPARAM_ID in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17; do
                  --golden-model-ckpt-path ${GOLDEN_MODEL_PATH} \
                  --use-data-cache \
                  --checkpoint-path ${RESULTS_ROOT}/${DATASET_NAME}_outputs/human_label_profiles_sampled_${START_TASK}_${TERMINATION_TASK}/ \
-                 --gpu-memory 4
+                 --gpu-memory 32
   done
 done
