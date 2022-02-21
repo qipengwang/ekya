@@ -29,16 +29,22 @@ With this release of Ekya, you can:
 	* [Running Ekya with Cityscapes Dataset](#running-ekya-with-cityscapes-dataset)
 		* [Preprocessing the Cityscapes Dataset](#preprocessing-the-cityscapes-dataset)
 		* [Running Ekya](#running-ekya-1)
-		* [Plotting Results](#plotting-results)
 	* [Running Ekya with the Waymo Dataset](#running-ekya-with-the-waymo-dataset)
-		* [Download Original Waymo Dataset](#download-original-waymo-dataset)
-		* [Download Processed Waymo Dataset](#download-processed-waymo-dataset)
-		* [Running Ekya](#running-ekya-2)
+		* [Download pretrained models](#download-pretrained-models)
+		* [Download Preprocessed Waymo Dataset](#download-preprocessed-waymo-dataset)
+		* [Regenerate processed Waymo Dataset from Original Waymo Dataset](#regenerate-processed-waymo-dataset-from-original-waymo-dataset)
+		* [Running Waymo](#running-waymo)
 	* [Running Ekya with Urban Traffic Dataset](#running-ekya-with-urban-traffic-dataset)
-		* [Prepare MP4(Bellevue) Dataset](#prepare-mp4bellevue-dataset)
+		* [Download Pretrained Models](#download-pretrained-models-1)
+		* [Prepare Urban Traffic Dataset from mp4 Videos](#prepare-urban-traffic-dataset-from-mp4-videos)
+		* [Running Urban Traffic Dataset](#running-urban-traffic-dataset)
 	* [Running Ekya with Urban Building Dataset](#running-ekya-with-urban-building-dataset)
-		* [Prepare MP4(Vegas) Dataset](#prepare-mp4vegas-dataset)
-* [Strawman Models](#strawman-models)
+		* [Download Pretrained Models](#download-pretrained-models-2)
+		* [Download Preprocessed Urban Building Dataset](#download-preprocessed-urban-building-dataset)
+		* [Prepare Urban Building Dataset from mp4 Videos](#prepare-urban-building-dataset-from-mp4-videos)
+		* [Running Urban Building Dataset](#running-urban-building-dataset)
+	* [Plotting Results](#plotting-results)
+* [Comparing against other baselines](#comparing-against-other-baselines)
 * [Extending Ekya](#extending-ekya)
 	* [Adding Custom Schedulers to Ekya](#adding-custom-schedulers-to-ekya)
 	* [Adding Custom Learning Techniques to Ekya](#adding-custom-learning-techniques-to-ekya)
@@ -342,7 +348,7 @@ python plot.py
 Ekya can be easily extended in two dimensions - adding custom schedulers and adding new continuous learning techniques.
 
 ## Adding Custom Schedulers to Ekya
-Ekya schedulers are implemented in `ekya/scheduelers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
+Ekya schedulers are implemented in `ekya/schedulers/`. Any new scheduler must extend the Scheduler base class in `scheduler.py`.
 
 The `BaseScheduler` class implements two key methods - `reallocation_callback` and `get_inference_schedule`. Their method signature and usage is described below.
 
