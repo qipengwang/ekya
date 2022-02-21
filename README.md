@@ -182,11 +182,6 @@ This script will run all schedulers, including `thief`, `fair` and `noretrain`.
 
 ## Running Ekya with the Waymo Dataset
 
-<!-- ### Download Original Waymo Dataset -->
-<!--  -->
-<!-- 1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/). -->
-<!-- 2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release". -->
-<!-- 3. Click "tar files". -->
 
 ### Download pretrained models
 1. Download ```waymo_pretrain_model.tar``` from
@@ -211,14 +206,21 @@ This script will run all schedulers, including `thief`, `fair` and `noretrain`.
     rm waymo_classification_images.tar
     ```
 ### Regenerate processed Waymo Dataset from Original Waymo Dataset
-1. Instead of downloading ```waymo_classification_images.tar```, download
-   ```waymo[0-7].tar``` 
-   [here](https://drive.google.com/drive/u/1/folders/1dJjnrHfV86eYB4nuMFrNU_kPUzzSknXb)
-   into ```dataset/waymo```.
-2. Then perform the following commands. TODO: a script to regenerate
+1. Go to [Waymo Open Dataset](https://waymo.com/intl/en_us/dataset-download-terms/).
+2. Under "Perception Dataset", go to "v1.0, August 2019: Initial release".
+3. Click "tar files" and download all tar files into "dataset/waymo/tfrecord"
+5. Decompress all tar files.
+6. Then perform the following commands.
+    ```bash
+    cd ekya/datasets/scripts
+    python waymo_generate_sample_lists.py --root ../../../dataset/waymo/tfrecord --save-dir ../../../dataset/waymo
+    ```
 
 ### Running Waymo
-TODO: Add instructions
+```bash
+cd ekya/experiment_drivers
+bash driver_profiling_waymo_golden.sh
+```
 
 
 ## Running Ekya with Urban Traffic Dataset
