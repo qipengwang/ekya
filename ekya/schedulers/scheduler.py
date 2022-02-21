@@ -11,7 +11,8 @@ def fair_reallocation(completed_camera_name: str,
                       inference_resource_weights: dict,
                       training_resources_weights: dict) -> [dict, dict]:
     '''
-    Implements a stateless fair reallocation of resources when a job completes.
+    Implements a stateless fair reallocation of resources among inference jobs
+    when a training job completes.
     :param completed_camera_name: str, name of the job completed
     :param inference_resource_weights: the current inference resource allocation
     :param training_resources_weights: the current training resource allocation
@@ -19,17 +20,22 @@ def fair_reallocation(completed_camera_name: str,
     '''
     if completed_camera_name not in training_resources_weights:
         raise KeyError(
-            'Completed job {} not found in the curren training resource weights {}.'.format(completed_camera_name,
-                                                                                            training_resources_weights.keys()))
+            'Completed job {} not found in the current training resource weights {}.'.format(completed_camera_name,
+                                                                                             training_resources_weights.keys()))
     relinquished_resources = training_resources_weights[completed_camera_name]
+    # Though it isn't necessary, subtract relinquished_resources for accounting
+    training_resources_weights[completed_camera_name] -= relinquished_resources
     # Do a fair reallocation
     new_inference_resource_weights = inference_resource_weights.copy()
     new_training_resource_weights = training_resources_weights.copy()
     # Redistribute only among the non-zero jobs
-    delta = relinquished_resources / len([x for x, old_allocation in new_inference_resource_weights.items() if old_allocation!=0])
-    for job_id, allocation in new_inference_resource_weights.items():
-        if allocation != 0:
-            new_inference_resource_weights[job_id] += delta
+    eligible_recipients = [x for x, old_allocation in new_inference_resource_weights.items() if old_allocation!=0]
+    # Check if any inference jobs exist in the first place. If not, return as is
+    if len(eligible_recipients) != 0:
+        delta = relinquished_resources / len(eligible_recipients)
+        for job_id, allocation in new_inference_resource_weights.items():
+            if allocation != 0:
+                new_inference_resource_weights[job_id] += delta
     return new_inference_resource_weights, new_training_resource_weights
 
 class BaseScheduler(object):
