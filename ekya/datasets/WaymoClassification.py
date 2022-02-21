@@ -369,15 +369,6 @@ class WaymoClassification(VisionDataset):
             class_dist.append(len(self.samples[mask]))
         return class_dist
 
-    def get_image_paths(self):
-        """Return image path of all samples."""
-        for idx, row in self.samples.iterrows():
-            if idx % 5 == 0:
-                print(os.path.join("/data/zxxia/ekya/datasets/waymo_classification_images", row['segment'], row['camera name'], row['image name']))
-        #     mask = self.samples['class'] == i
-        #     class_dist.append(len(self.samples[mask]))
-        # return class_dist
-
     def get_time_of_day(self):
         """Return the majority of weather of all samples."""
         return self.samples['time of day'].mode().values[0]
@@ -416,18 +407,22 @@ class WaymoClassification(VisionDataset):
             tracking_difficulty_levels
 
     @staticmethod
-    def generate_samples(segment, seg_name, writer, seg_save_root=None,
-                         min_res=224, model_name=None, min_time_gap=0.5):
-        '''
+    def generate_samples(segment, seg_name: str, writer,
+                         seg_save_root: str = "",
+                         min_res: int = 224, gt_file: str = "",
+                         min_time_gap: float = 0.5):
+        '''Generate sample ground truth and classification images from tfrecord
+           or a groudn truth file.
 
-        :param segment:
-        :param seg_name:
-        :param writer:
-        :param seg_save_root:
-        :param min_res:
-        :param model_name:
-        :param min_time_gap: Minimum time gap between two frames from the same camera
-        :return:
+        Args:
+            segment: a segment tfrecord.
+            seg_name: the name of the segment.
+            writer:
+            seg_save_root: the directory that holds all segment files.
+            min_res: minimum resolution of cropped images
+            gt_file: a ground truth file that holds bounding box information.
+            min_time_gap: Minimum time gap between two frames from the same
+            camera
         '''
         assert writer is not None
         sample_cnt = 0
@@ -437,10 +432,6 @@ class WaymoClassification(VisionDataset):
             frame = open_dataset.Frame()
             frame.ParseFromString(bytearray(data.numpy()))
             for image in frame.images:
-                # if open_dataset.CameraName.Name.Name(image.name) != 'FRONT':
-                #     print(open_dataset.CameraName.Name.Name(image.name))
-                #     continue
-
                 # Min time gap check
                 # FRONT, SIDE_LEFT etc.
                 camera_name = open_dataset.CameraName.Name.Name(image.name)
@@ -453,27 +444,19 @@ class WaymoClassification(VisionDataset):
                 # if not, update last ts and run extraction
                 last_frame_timestamp[camera_name] = this_ts
 
-                if seg_save_root is not None:
+                if seg_save_root:
                     img = Image.fromarray(
                         np.array(tf.image.decode_jpeg(image.image)), 'RGB')
                 resol = WaymoClassification.get_camera_resolution(
                     frame.context.camera_calibrations, image.name)
-                if model_name is None:
+                if not gt_file:
                     obj_ids, bboxes, obj_types, detection_difficulty_levels, \
                         tracking_difficulty_levels = \
                         WaymoClassification.get_frame_labels(
                             frame.projected_lidar_labels, image)
                 else:
-                    gt_file = os.path.join(
-                        '/data/zxxia/ekya/datasets/waymo_images',
-                        seg_name,
-                        open_dataset.CameraName.Name.Name(image.name),
-                        f'profile/{model_name}_detections.csv')
-                    # 'profile/gt_FasterRCNN_COCO.csv')
                     if not os.path.exists(gt_file):
                         raise Exception(f'{gt_file} does not exist!')
-                    # print(gt_file)
-                    # _, gtruth = read_annot(gt_file)
                     gtruth = load_object_detection_results(gt_file, True)
                     bboxes = gtruth[frame_idx]
                     obj_types = [box[4] for box in bboxes]
@@ -526,7 +509,7 @@ class WaymoClassification(VisionDataset):
                     if box[3] > resol[1]:
                         box[3] = resol[1]
                         box[1] = box[3] - min_res
-                    if model_name is not None:
+                    if gt_file:
                         img_name = '{:04d}_{}_{}.jpg'.format(
                             frame_idx, obj_id,
                             open_dataset.CameraName.Name.Name(image.name))
@@ -544,7 +527,7 @@ class WaymoClassification(VisionDataset):
                                      detection_difficulty_level,
                                      tracking_difficulty_level])
                     sample_cnt += 1
-                    if seg_save_root is not None:
+                    if seg_save_root:
                         cam_save_root = os.path.join(
                             seg_save_root, open_dataset.CameraName.Name.Name(
                                 image.name))
@@ -555,18 +538,19 @@ class WaymoClassification(VisionDataset):
                             tuple(box[:4])).resize((min_res, min_res))
                         cropped_img.save(img_path)
                         cropped_img.close()
-                if seg_save_root is not None:
+                if seg_save_root:
                     img.close()
 
     @staticmethod
-    def generate_sample_list(sorted_segs_file, city, waymo_root,
-                             img_save_path=None, write_filename=None, min_res=224, date_range=None,
-                             start_seg_index=0, num_segs=-1, model_name=None, min_time_gap=0.5):
+    def generate_sample_list(
+            sorted_segs_file: str, city: str, img_save_path: str = "",
+            write_filename: str = "", min_res: int = 224, date_range=None,
+            start_seg_index=0, num_segs=-1, gt_file: str ="", min_time_gap=0.5):
         """Generate sample list."""
         with open(sorted_segs_file, 'r') as f:
             sorted_segs = json.load(f)
 
-        if write_filename is not None:
+        if write_filename:
             fout = open(write_filename, "w", 1)
             writer = csv.writer(fout)
             writer.writerow(['idx', 'image name', 'class', 'timestamp',
@@ -585,69 +569,63 @@ class WaymoClassification(VisionDataset):
                 continue
             seg_ts = datetime.utcfromtimestamp(pair[1]/1000000)
             tfrec_path = pair[0]
-            if "/tank/zxxia/waymo" in tfrec_path:
-                tfrec_path = tfrec_path.replace(
-                    "/tank/zxxia/waymo", waymo_root)
             if date_range is None:
                 seg_files.append(tfrec_path)
             elif date_range[0] <= seg_ts <= date_range[1]:
                 seg_files.append(tfrec_path)
 
-        print('nb of seg files', len(seg_files))
+        print('Num of seg files', len(seg_files))
 
         for seg_file in seg_files:
-            print(seg_file)
             segment = tf.data.TFRecordDataset(seg_file, compression_type='')
             seg_name = os.path.splitext(os.path.basename(seg_file))[0]
-            if img_save_path is not None:
+            if img_save_path:
                 seg_img_save_path = os.path.join(img_save_path, seg_name)
                 if not os.path.exists(seg_img_save_path):
                     os.mkdir(seg_img_save_path)
             else:
-                seg_img_save_path = None
+                seg_img_save_path = ""
 
             start_t = time.time()
             WaymoClassification.generate_samples(
                 segment, seg_name, writer, seg_img_save_path, min_res,
-                model_name=model_name, min_time_gap=min_time_gap)
-            print("Processing {} cost {} seconds".format(seg_file,
-                                                         time.time()-start_t))
+                gt_file=gt_file, min_time_gap=min_time_gap)
+            print("Processing {} cost {:.2f} seconds".format(
+                seg_file, time.time()-start_t))
+        if writer is not None:
+            fout.close()
 
     @staticmethod
-    def sort_segments(root, save_file=None):
+    def sort_segments(root: str, save_dir: str):
         """
         Sort segments based on the timestamp of the 1st frame.
 
         Args
-            root: directory where training_0000/ ... validation_0007/ exist
+            root: directory where *.tfrecord segment files exist
             save_file: save a json file if specified
 
         Returns
-            segments(dictionary): location - [segments] pairs
-
+            segments(dictionary): {location: [[segments, timestamp], ...]
         """
         ret_segs = defaultdict(list)
         timestamps = defaultdict(list)
-        # segments = sorted(glob.glob(PATH + '*.tfrecord'))
-        segs = glob.glob(os.path.join(root, '*/*.tfrecord'))
-        # for root in roots:
-        #     segs.extend(glob.glob(os.path.join(root, '*.tfrecord')))
+        segs = glob.glob(os.path.join(root, '*.tfrecord'))
         for seg_file in segs:
             segment = tf.data.TFRecordDataset(seg_file, compression_type='')
             for _, data in enumerate(segment):
                 frame = open_dataset.Frame()
                 frame.ParseFromString(bytearray(data.numpy()))
                 ret_segs[frame.context.stats.location].append(seg_file)
-                timestamps[frame.context.stats.location]\
-                    .append(frame.timestamp_micros)
+                timestamps[frame.context.stats.location].append(
+                    frame.timestamp_micros)
                 break  # only need 1st frame to check the timestamp
         for loc in ret_segs:
             segs = ret_segs[loc]
             loc_ts = timestamps[loc]
             ret_segs[loc] = sorted(zip(segs, loc_ts), key=lambda pair: pair[1])
-        if save_file is not None:
-            with open(save_file, 'w') as fout:
-                json.dump(ret_segs, fout, sort_keys=True, indent=4)
+
+        with open(os.path.join(save_dir, 'sorted_segments.json'), 'w') as fout:
+            json.dump(ret_segs, fout, sort_keys=True, indent=4)
         return ret_segs
 
 
