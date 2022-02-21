@@ -156,7 +156,7 @@ class Ekya(object):
         Stops all current jobs in the system. Used at the start of a retraining.
         :return:
         '''
-        # TODO - Log results if any are still running.
+        # TODO: Log results if any are still running.
         print("Stopping all jobs.")
         for task in self.inference_tasks.values():
             ray.cancel(task, force=True)
@@ -167,7 +167,7 @@ class Ekya(object):
             if hasattr(camera, "inference_model"):
                 ray.kill(camera.inference_model)
                 del camera.inference_model
-            # TODO: This will result in RayActorErrors for some of the get tasks - they must be handled in the calling functions.
+            # WARN: This will result in RayActorErrors for some of the get tasks - they must be handled in the calling functions.
 
     def update_inference_jobs(self,
                               inference_resource_weights: dict,
@@ -266,7 +266,7 @@ class Ekya(object):
         print("[Ekya] Inference Scheduler allocation: Inference: {}. Ray demands: {}\n".format(self.inference_resource_weights, ray_inference_resource_demands))
         self.update_inference_jobs(self.inference_resource_weights, self.current_hyperparameters, ray_inference_resource_demands)
 
-        # TODO: These resource allocations should be over time. Consquently, resource allocations must be updated over time.
+        # Future work: These resource allocations should be over time. Consquently, resource allocations must be updated over time.
         custom_state = {"task_id": self.current_task,
                         "retraining_period": self.retraining_period}
         prev_hyperparams = self.current_hyperparameters
@@ -285,8 +285,6 @@ class Ekya(object):
         print("[Ekya] Training+Inference Scheduler allocation: Training: {}\nInference: {}\n Ray Training: {}\n Ray Inference: {}".format(self.training_resource_weights, self.inference_resource_weights, ray_training_resource_demands, ray_inference_resource_demands))
         self.log_schedules(self.current_task, self.inference_resource_weights, self.training_resource_weights, self.current_hyperparameters)
 
-        # TODO: Get predictions from golden model.
-        # labels = self.run_golden_model(self.cameras)
         # Update inference jobs with new weights from the scheduler and launch retraining jobs
         self.update_inference_jobs(self.inference_resource_weights, self.current_hyperparameters, ray_inference_resource_demands)
         self.launch_training_jobs(self.training_resource_weights, self.current_hyperparameters, ray_training_resource_demands)
@@ -399,7 +397,6 @@ class Ekya(object):
                             if c.inference_gpu_weight > 0:
                                 c.update_inference_from_retrained_model()
                             # Update remaining cameras' inference weights
-                            # TODO(ROMILB): This will eventually be changed to updating BOTH training and inference jobs.
                             # NOTE(ROMILB): Updating each inference job's weights through restarts might be expensive
                             # NOTE(ROMILB): Consider parallelizing this.
                             for x in self.cameras:
@@ -412,7 +409,7 @@ class Ekya(object):
                         else:
                             print("[WARN] Not doing anything on train job completion.")
                 print("Check task loop: remaining time: {}".format(remaining_time))
-                time.sleep(1)   # Sleep before checking again. TODO: This might cause timing leaks.
+                time.sleep(1)   # Sleep before checking again. WARN: This might cause timing leaks.
             if remaining_time <= 0:
                 return
 
@@ -427,7 +424,7 @@ class Ekya(object):
             print("Started loop")
             this_loop_start_time = time.time()
             self.last_retraining_start_time = this_loop_start_time
-            # TODO - Make this async:
+            # TODO: Make this async:
             self.new_task_callback()
 
             # Check running retraining tasks and load their models into inference when they complete.

@@ -1,1 +1,0 @@
-rsync -avz gcr:/tmp/ekya/0/ /home/romilb/research/msr/ekya/ekya/analysis/data/run1/
